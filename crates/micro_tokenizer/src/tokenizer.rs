@@ -29,7 +29,7 @@ impl Tokenizer {
 
     pub fn from_unordered_vocab(raw_vocab: &[(Vec<u8>, TokenId)]) -> Self {
         let mut expanded = Vec::with_capacity(raw_vocab.iter().map(|v| v.0.len()).sum());
-        let mut vocab = Vec::with_capacity(raw_vocab.len());
+        let mut vocab = vec![Range::new(usize::MAX, usize::MAX); raw_vocab.len()];
         let mut tokens = Vec::with_capacity(raw_vocab.len());
 
         for (token, id) in raw_vocab {
@@ -39,12 +39,7 @@ impl Tokenizer {
             
             let idx = *id as usize;
             
-            if idx >= vocab.len() {
-                vocab.resize(idx + 1, Range::new(usize::MAX, usize::MAX));
-            }
-            
-            vocab.insert(idx, Range::new(start, end));
-            
+            vocab[idx] = Range::new(start, end);
             
             tokens.push((Range::new(start, end), *id));
         }
