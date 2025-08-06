@@ -11,13 +11,59 @@ pub struct Tokenizer {
 }
 
 impl Tokenizer {
-    pub fn from_vocab(vocab: &[Vec<u8>]) -> Self {
-        todo!()
-
+    pub fn from_vocab(raw_vocab: &[Vec<u8>]) -> Self {
+        let mut expanded = Vec::with_capacity(raw_vocab.iter().map(|v| v.len()).sum());
+        let mut vocab = Vec::with_capacity(raw_vocab.len());
+        let mut tokens = Vec::with_capacity(raw_vocab.len());
+        
+        for token in raw_vocab {
+            let start = expanded.len();
+            expanded.extend_from_slice(token);
+            let end = expanded.len();
+            vocab.push(start..end);
+            tokens.push((start..end, tokens.len() as TokenId));
+        }
+        
+        
+        
+        Self::from_raw(expanded, vocab, tokens)
     }
 
-    pub fn from_unordered_vocab(vocab: &[(Vec<u8>, TokenId)]) -> Self {
+    pub fn from_unordered_vocab(raw_vocab: &[(Vec<u8>, TokenId)]) -> Self {
+        let mut expanded = Vec::with_capacity(raw_vocab.iter().map(|v| v.0.len()).sum());
+        let mut vocab = Vec::with_capacity(raw_vocab.len());
+        let mut tokens = Vec::with_capacity(raw_vocab.len());
+
+        for (token, id) in raw_vocab {
+            let start = expanded.len();
+            expanded.extend_from_slice(token);
+            let end = expanded.len();
+            
+            let idx = *id as usize;
+            
+            if idx >= vocab.len() {
+                vocab.resize(idx + 1, usize::MAX..usize::MAX);
+            }
+            
+            vocab.insert(idx, start..end);
+            
+            
+            tokens.push((start..end, *id));
+        }
+        
+        vocab.iter().any(|r| r.start == usize::MAX && r.end == usize::MAX)
+            .then(|| {
+                panic!("Unordered vocab contains gaps, which is not supported by this tokenizer.");
+            });
+
+        Self::from_raw(expanded, vocab, tokens)
+        
+    }
+    
+    pub fn from_raw(mut expanded: Vec<u8>, mut vocab: Vec<TokenRange>, mut tokens: Vec<(TokenRange, TokenId)>) -> Self {
+        
         todo!()
+        
     }
 
     pub fn encode(&self, text: impl AsRef<[u8]>) -> Vec<TokenId> {
