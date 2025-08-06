@@ -1,13 +1,11 @@
-use std::ops::Range;
 
-type TokenRange = Range<usize>;
 type TokenId = u32;
 
 pub struct Tokenizer {
     expanded: Vec<u8>,
-    vocab: Vec<TokenRange>,
-    tokens: Vec<(TokenRange, TokenId)>,
-    cached_range: [TokenRange; 256],
+    vocab: Vec<Range>,
+    tokens: Vec<(Range, TokenId)>,
+    cached_range: [Range; 256],
 }
 
 impl Tokenizer {
@@ -20,8 +18,8 @@ impl Tokenizer {
             let start = expanded.len();
             expanded.extend_from_slice(token);
             let end = expanded.len();
-            vocab.push(start..end);
-            tokens.push((start..end, tokens.len() as TokenId));
+            vocab.push(Range::new(start, end));
+            tokens.push((Range::new(start, end), tokens.len() as TokenId));
         }
         
         
@@ -42,16 +40,16 @@ impl Tokenizer {
             let idx = *id as usize;
             
             if idx >= vocab.len() {
-                vocab.resize(idx + 1, usize::MAX..usize::MAX);
+                vocab.resize(idx + 1, Range::new(usize::MAX, usize::MAX));
             }
             
-            vocab.insert(idx, start..end);
+            vocab.insert(idx, Range::new(start, end));
             
             
-            tokens.push((start..end, *id));
+            tokens.push((Range::new(start, end), *id));
         }
         
-        vocab.iter().any(|r| r.start == usize::MAX && r.end == usize::MAX)
+        vocab.iter().any(|r| r.start == u32::MAX && r.end == u32::MAX)
             .then(|| {
                 panic!("Unordered vocab contains gaps, which is not supported by this tokenizer.");
             });
@@ -60,18 +58,15 @@ impl Tokenizer {
         
     }
     
-    pub fn from_raw(mut expanded: Vec<u8>, mut vocab: Vec<TokenRange>, mut tokens: Vec<(TokenRange, TokenId)>) -> Self {
+    pub fn from_raw(expanded: Vec<u8>, vocab: Vec<Range>, mut tokens: Vec<(Range, TokenId)>) -> Self {
         tokens.sort_by(|(a, _), (b, _)| {
-            let a = expanded.get(a.clone()).expect("Token does not exist");
-            let b = expanded.get(b.clone()).expect("Token does not exist");
+            let a = expanded.get_range(*a);
+            let b = expanded.get_range(*b);
 
             a.cmp(b)
         });
 
-        // let mut cached_range = [Range::default(); 256];
-        
-        // TODO: remove the unsafe... i need to sleep now, so fuck it, will fix later
-        let mut cached_range = unsafe { std::mem::zeroed::<[TokenRange; 256]>() };
+        let mut cached_range = [Range::default(); 256];
 
         let mut offset = 0;
         for (i, range) in cached_range.iter_mut().enumerate() {
@@ -79,7 +74,7 @@ impl Tokenizer {
 
             while {
                 if let Some(tok_range) = tokens.get(offset) {
-                    let expanded = expanded.get(tok_range.0.clone()).expect("Token does not exist");
+                    let expanded = expanded.get_range(tok_range.0);
 
                     expanded[0] == i as u8
                 } else {
@@ -91,7 +86,7 @@ impl Tokenizer {
 
             let end = offset;
 
-            *range = start..end;
+            *range = Range::new(start, end);
         }
         
         
@@ -122,9 +117,7 @@ impl Tokenizer {
                 continue;
             };
 
-            let Some(voc) = self.expanded.get(range.clone()) else {
-                continue;
-            };
+            let voc = self.expanded.get_range(*range);
 
 
             bytes.extend_from_slice(voc);
@@ -132,7 +125,40 @@ impl Tokenizer {
 
 
         bytes
+    }
+}
 
 
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Range {
+    start: u32,
+    end: u32,
+}
+
+impl Range {
+    fn new(start: usize, end: usize) -> Self {
+        Self {
+            start: start as u32,
+            end: end as u32,
+        }
+    }
+
+    pub fn len(&self) -> u32 {
+        self.end - self.start
+    }
+}
+
+
+pub(crate) trait VecExt<T> {
+    fn get_range(&self, range: Range) -> &[T];
+}
+
+impl<T> VecExt<T> for Vec<T> {
+    fn get_range(&self, range: Range) -> &[T] {
+        let start = range.start as usize;
+        let end = range.end as usize;
+
+        &self[start..end]
     }
 }
