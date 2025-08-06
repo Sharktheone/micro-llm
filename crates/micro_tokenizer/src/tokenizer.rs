@@ -61,8 +61,46 @@ impl Tokenizer {
     }
     
     pub fn from_raw(mut expanded: Vec<u8>, mut vocab: Vec<TokenRange>, mut tokens: Vec<(TokenRange, TokenId)>) -> Self {
+        tokens.sort_by(|(a, _), (b, _)| {
+            let a = expanded.get(a.clone()).expect("Token does not exist");
+            let b = expanded.get(b.clone()).expect("Token does not exist");
+
+            a.cmp(b)
+        });
+
+        // let mut cached_range = [Range::default(); 256];
         
-        todo!()
+        // TODO: remove the unsafe... i need to sleep now, so fuck it, will fix later
+        let mut cached_range = unsafe { std::mem::zeroed::<[TokenRange; 256]>() };
+
+        let mut offset = 0;
+        for (i, range) in cached_range.iter_mut().enumerate() {
+            let start = offset;
+
+            while {
+                if let Some(tok_range) = tokens.get(offset) {
+                    let expanded = expanded.get(tok_range.0.clone()).expect("Token does not exist");
+
+                    expanded[0] == i as u8
+                } else {
+                    false
+                }
+            } {
+                offset += 1;
+            }
+
+            let end = offset;
+
+            *range = start..end;
+        }
+        
+        
+        Self {
+            vocab,
+            expanded,
+            cached_range,
+            tokens
+        }
         
     }
 
