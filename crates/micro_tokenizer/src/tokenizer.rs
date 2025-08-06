@@ -95,8 +95,22 @@ impl Tokenizer {
         
     }
 
-    pub fn encode(&self, text: impl AsRef<[u8]>) -> Vec<TokenId> {
-        Vec::new()
+    pub fn encode(&self, b: impl AsRef<[u8]>) -> Vec<TokenId> {
+        let b = b.as_ref();
+        
+        let mut buf = Vec::with_capacity(b.len() / 3);
+
+        let mut i = 0;
+
+        while i < b.len() {
+            let (token, len) = self.search_max_token(&b[i..]);
+
+            buf.push(token);
+
+            i += len;
+        }
+
+        buf
     }
 
     pub fn decode(&self, tokens: &[TokenId]) -> String {
