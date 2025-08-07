@@ -2,6 +2,7 @@ pub mod linear;
 mod embedding;
 mod layer_norm;
 mod gelu;
+mod softmax;
 
 use safetensors::SafeTensors;
 
