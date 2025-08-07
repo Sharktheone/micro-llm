@@ -1,6 +1,7 @@
 pub mod linear;
 mod embedding;
 mod layer_norm;
+mod gelu;
 
 use safetensors::SafeTensors;
 
