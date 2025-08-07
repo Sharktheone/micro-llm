@@ -1,3 +1,4 @@
+pub mod linear;
 
 use safetensors::SafeTensors;
 
