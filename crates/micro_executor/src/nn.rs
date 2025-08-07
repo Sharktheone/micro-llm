@@ -3,6 +3,7 @@ mod embedding;
 mod layer_norm;
 mod gelu;
 mod softmax;
+mod multinomial;
 
 use safetensors::SafeTensors;
 
