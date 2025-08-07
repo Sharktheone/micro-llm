@@ -4,6 +4,7 @@ mod layer_norm;
 pub mod linear;
 mod multinomial;
 mod softmax;
+mod silu;
 
 use safetensors::SafeTensors;
 
