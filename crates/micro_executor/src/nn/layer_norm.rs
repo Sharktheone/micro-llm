@@ -1,8 +1,8 @@
+use crate::load::{LoadResult, Loadable, load_array1};
+use crate::nn::Layer;
 use ndarray::{Array2, ArrayView1, ScalarOperand};
 use num_traits::{Float, FromPrimitive, Zero};
 use safetensors::SafeTensors;
-use crate::load::{load_array1, LoadResult, Loadable};
-use crate::nn::Layer;
 
 pub struct LayerNorm<'a, T> {
     weight: ArrayView1<'a, T>,

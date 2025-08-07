@@ -1,9 +1,9 @@
-pub mod linear;
 mod embedding;
-mod layer_norm;
 mod gelu;
-mod softmax;
+mod layer_norm;
+pub mod linear;
 mod multinomial;
+mod softmax;
 
 use safetensors::SafeTensors;
 

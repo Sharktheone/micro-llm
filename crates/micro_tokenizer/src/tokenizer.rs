@@ -14,7 +14,7 @@ impl Tokenizer {
         let mut expanded = Vec::with_capacity(raw_vocab.iter().map(|v| v.len()).sum());
         let mut vocab = Vec::with_capacity(raw_vocab.len());
         let mut tokens = Vec::with_capacity(raw_vocab.len());
-        
+
         for token in raw_vocab {
             let start = expanded.len();
             expanded.extend_from_slice(token);
@@ -22,9 +22,7 @@ impl Tokenizer {
             vocab.push(Range::new(start, end));
             tokens.push((Range::new(start, end), tokens.len() as TokenId));
         }
-        
-        
-        
+
         Self::from_raw(expanded, vocab, tokens)
     }
 
@@ -37,24 +35,29 @@ impl Tokenizer {
             let start = expanded.len();
             expanded.extend_from_slice(token);
             let end = expanded.len();
-            
+
             let idx = *id as usize;
-            
+
             vocab[idx] = Range::new(start, end);
-            
+
             tokens.push((Range::new(start, end), *id));
         }
-        
-        vocab.iter().any(|r| r.start == u32::MAX && r.end == u32::MAX)
+
+        vocab
+            .iter()
+            .any(|r| r.start == u32::MAX && r.end == u32::MAX)
             .then(|| {
                 panic!("Unordered vocab contains gaps, which is not supported by this tokenizer.");
             });
 
         Self::from_raw(expanded, vocab, tokens)
-        
     }
-    
-    pub fn from_raw(expanded: Vec<u8>, vocab: Vec<Range>, mut tokens: Vec<(Range, TokenId)>) -> Self {
+
+    pub fn from_raw(
+        expanded: Vec<u8>,
+        vocab: Vec<Range>,
+        mut tokens: Vec<(Range, TokenId)>,
+    ) -> Self {
         tokens.sort_by(|(a, _), (b, _)| {
             let a = expanded.get_range(*a);
             let b = expanded.get_range(*b);
@@ -84,20 +87,18 @@ impl Tokenizer {
 
             *range = Range::new(start, end);
         }
-        
-        
+
         Self {
             vocab,
             expanded,
             cached_range,
-            tokens
+            tokens,
         }
-        
     }
 
     pub fn encode(&self, b: impl AsRef<[u8]>) -> Vec<TokenId> {
         let b = b.as_ref();
-        
+
         let mut buf = Vec::with_capacity(b.len() / 3);
 
         let mut i = 0;
@@ -129,14 +130,12 @@ impl Tokenizer {
 
             let voc = self.expanded.get_range(*range);
 
-
             bytes.extend_from_slice(voc);
         }
 
-
         bytes
     }
-    
+
     fn search_max_token(&self, buf: &[u8]) -> (u32, usize) {
         let Some(pref) = buf.first().copied() else {
             return (u32::MAX, 0);
@@ -152,10 +151,10 @@ impl Tokenizer {
 
         let Some(mut search) = buf.get(1).cloned() else {
             let buf = self.expanded.get_range(tokens[0].0);
-            if buf[0] == pref  && buf.len() == 1 {
+            if buf[0] == pref && buf.len() == 1 {
                 return (tokens[0].1, 1);
             }
-            
+
             //TODO: we should now search for the next few tokens
             return (u32::MAX, 1);
         };
@@ -307,7 +306,7 @@ impl Tokenizer {
                         right_left = mid + 1;
                         size = right - right_left;
                     }
-                    
+
                     round += 1;
                     if round == range.len() as usize {
                         cur_token = tok;
@@ -340,13 +339,14 @@ impl Tokenizer {
 
         ret(cur_token, cur_len, real_tok_idx)
     }
-    
+
     pub fn bytes_allocated(&self) -> usize {
-        self.expanded.capacity() + self.vocab.capacity() * size_of::<Range>() + self.tokens.capacity() * size_of::<(Range, TokenId)>() + size_of::<Self>()
+        self.expanded.capacity()
+            + self.vocab.capacity() * size_of::<Range>()
+            + self.tokens.capacity() * size_of::<(Range, TokenId)>()
+            + size_of::<Self>()
     }
 }
-
-
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Range {
@@ -366,7 +366,6 @@ impl Range {
         self.end - self.start
     }
 }
-
 
 pub(crate) trait VecExt<T> {
     fn get_range(&self, range: Range) -> &[T];

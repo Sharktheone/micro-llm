@@ -1,7 +1,7 @@
+use crate::load::{LoadResult, Loadable, load_array1, load_array2};
+use crate::nn::Layer;
 use ndarray::{Array2, ArrayView1, ArrayView2, LinalgScalar};
 use safetensors::SafeTensors;
-use crate::load::{load_array1, load_array2, LoadResult, Loadable};
-use crate::nn::Layer;
 
 pub struct Linear<'a, T> {
     weight: ArrayView2<'a, T>,

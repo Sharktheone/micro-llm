@@ -1,18 +1,19 @@
-use ndarray::{s, Array2, ArrayView2, Axis};
-use crate::load::{load_array2, LoadResult, Loadable};
+use crate::load::{LoadResult, Loadable, load_array2};
+use ndarray::{Array2, ArrayView2, Axis, s};
 
 pub struct Embedding<'a, T> {
     weight: ArrayView2<'a, T>,
 }
 
-
 impl<'a, T: Loadable> Embedding<'a, T> {
-    pub fn from_safe_tensors(model: &safetensors::SafeTensors<'a>, prefix: &str) -> LoadResult<Self> {
+    pub fn from_safe_tensors(
+        model: &safetensors::SafeTensors<'a>,
+        prefix: &str,
+    ) -> LoadResult<Self> {
         let weight = load_array2(model, &format!("{}weight", prefix))?;
         Ok(Embedding { weight })
     }
 }
-
 
 impl<'a, T: Clone> Embedding<'a, T> {
     pub fn forward(&self, input: &[usize]) -> Array2<T> {

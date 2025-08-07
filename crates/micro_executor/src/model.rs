@@ -3,7 +3,6 @@ mod llama;
 use safetensors::SafeTensors;
 
 pub trait Model<'a>: Sized {
-
     type Cache;
 
     fn from_safetensors(tensors: SafeTensors<'a>) -> anyhow::Result<Self>;

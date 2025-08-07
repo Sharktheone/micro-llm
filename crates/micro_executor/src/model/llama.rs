@@ -1,6 +1,1 @@
-
-
-
-
-pub struct LlamaModel {
-}
+pub struct LlamaModel {}
