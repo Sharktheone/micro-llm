@@ -1,5 +1,6 @@
 pub mod linear;
 mod embedding;
+mod layer_norm;
 
 use safetensors::SafeTensors;
 
