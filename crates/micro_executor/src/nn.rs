@@ -1,4 +1,5 @@
 pub mod linear;
+mod embedding;
 
 use safetensors::SafeTensors;
 
