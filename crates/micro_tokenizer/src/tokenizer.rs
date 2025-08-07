@@ -340,6 +340,10 @@ impl Tokenizer {
 
         ret(cur_token, cur_len, real_tok_idx)
     }
+    
+    pub fn bytes_allocated(&self) -> usize {
+        self.expanded.capacity() + self.vocab.capacity() * size_of::<Range>() + self.tokens.capacity() * size_of::<(Range, TokenId)>() + size_of::<Self>()
+    }
 }
 
 
