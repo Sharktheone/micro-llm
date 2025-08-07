@@ -1,6 +1,6 @@
 use bytemuck::{cast_slice, AnyBitPattern};
 use half::{bf16, f16};
-use ndarray::{Array1, ArrayView1, ArrayView2, ShapeError};
+use ndarray::{ArrayView1, ArrayView2, ShapeError};
 use num_traits::FromPrimitive;
 use safetensors::{Dtype, SafeTensorError};
 use thiserror::Error;
@@ -20,7 +20,7 @@ pub enum LoadError {
 pub type LoadResult<T> = Result<T, LoadError>;
 
 
-pub fn load_array1<'a, T: FromPrimitive + DType + AnyBitPattern>(
+pub fn load_array1<'a, T: Loadable>(
     model: &safetensors::SafeTensors<'a>,
     prefix: &str,
 ) -> LoadResult<ArrayView1<'a, T>> {
@@ -40,7 +40,7 @@ pub fn load_array1<'a, T: FromPrimitive + DType + AnyBitPattern>(
 }
 
 
-pub fn load_array2<'a, T: FromPrimitive + DType + AnyBitPattern>(
+pub fn load_array2<'a, T: Loadable>(
     model: &safetensors::SafeTensors<'a>,
     prefix: &str,
 ) -> LoadResult<ArrayView2<'a, T>> {
@@ -82,3 +82,8 @@ impl_dtype!(bf16, BF16);
 impl_dtype!(f16, F16);
 impl_dtype!(f32, F32);
 impl_dtype!(f64, F64);
+
+
+pub trait Loadable: FromPrimitive + DType + AnyBitPattern {}
+
+impl<T: FromPrimitive + DType + AnyBitPattern> Loadable for T {}
