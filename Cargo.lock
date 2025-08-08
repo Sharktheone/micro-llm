@@ -134,6 +134,10 @@ dependencies = [
 [[package]]
 name = "micro_tokenizer"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde_json",
+]
 
 [[package]]
 name = "micro_utils"
