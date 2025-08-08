@@ -136,6 +136,16 @@ impl Tokenizer {
         bytes
     }
 
+    pub fn decode_token(&self, token: TokenId) -> Option<String> {
+        let Some(range) = self.vocab.get(token as usize) else {
+            return None;
+        };
+
+        let voc = self.expanded.get_range(*range);
+
+        String::from_utf8(voc.to_vec()).ok()
+    }
+
     fn search_max_token(&self, buf: &[u8]) -> (u32, usize) {
         let Some(pref) = buf.first().copied() else {
             return (u32::MAX, 0);
