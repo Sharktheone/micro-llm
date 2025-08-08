@@ -1,10 +1,19 @@
 mod embedding;
 mod gelu;
 mod layer_norm;
-pub mod linear;
+mod linear;
 mod multinomial;
 mod softmax;
 mod silu;
+
+pub use embedding::*;
+pub use gelu::*;
+pub use layer_norm::*;
+pub use linear::*;
+pub use multinomial::*;
+pub use softmax::*;
+pub use silu::*;
+
 
 use safetensors::SafeTensors;
 
