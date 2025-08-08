@@ -15,7 +15,9 @@ pub fn load_hf_tokenizer(path: &str) -> anyhow::Result<Tokenizer> {
 
     for (token, id) in tokens.iter() {
         if let Some(id) = id.as_u64() {
-            token_ids.push((token.as_bytes().to_vec(), id as u32));
+            let bytes = token.replace("Ġ", " ").into_bytes();
+
+            token_ids.push((bytes, id as u32));
         }
     }
 
