@@ -6,11 +6,13 @@ edition = "2024"
 [dependencies]
 safetensors = "0.6.1"
 memmap2 = "0.9.7"
-half = { version = "2.6.0", features = ["bytemuck"] }
-ndarray = "0.16.1"
+half = { version = "2.6.0", features = ["bytemuck", "num-traits"] }
+ndarray = { version = "0.16.1", features = ["matrixmultiply-threading"] }
 ndarray-rand = "0.15.0"
 bytemuck = "1.23.1"
 anyhow = "1.0.98"
 thiserror = "2.0.12"
 num-traits = "0.2.19"
 libm = "0.2.15"
+
+micro_tokenizer = { path = "../micro_tokenizer", features = ["hf"] }
