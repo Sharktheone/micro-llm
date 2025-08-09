@@ -3,17 +3,16 @@ mod gelu;
 mod layer_norm;
 mod linear;
 mod multinomial;
-mod softmax;
 mod silu;
+mod softmax;
 
 pub use embedding::*;
 pub use gelu::*;
 pub use layer_norm::*;
 pub use linear::*;
 pub use multinomial::*;
-pub use softmax::*;
 pub use silu::*;
-
+pub use softmax::*;
 
 use safetensors::SafeTensors;
 

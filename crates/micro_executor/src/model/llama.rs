@@ -2,7 +2,7 @@ use crate::bf16_wrapper::Bf16Wrapper;
 use crate::load::{load_array1, load_array2};
 use crate::model::Model;
 use crate::nn::{multinomial, silu, softmax1};
-use ndarray::{s, Array1, Array2, ArrayView2, Axis, concatenate};
+use ndarray::{Array1, Array2, ArrayView2, Axis, concatenate, s};
 use safetensors::SafeTensors;
 
 fn to_f32_2(v: ArrayView2<Bf16Wrapper>) -> Array2<f32> {
@@ -77,8 +77,12 @@ struct LayerCache {
     v: Array2<f32>,
 }
 impl LayerCache {
-    fn len(&self) -> usize { self.k.shape().get(0).copied().unwrap_or(0) }
-    fn is_empty(&self) -> bool { self.len() == 0 }
+    fn len(&self) -> usize {
+        self.k.shape().get(0).copied().unwrap_or(0)
+    }
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
     fn append(&mut self, k_new: &Array2<f32>, v_new: &Array2<f32>) {
         if self.is_empty() {
             self.k = k_new.clone();
@@ -95,7 +99,11 @@ pub struct LlamaCache {
     layers: Vec<LayerCache>,
 }
 impl LlamaCache {
-    fn with_layers(n: usize) -> Self { Self { layers: vec![LayerCache::default(); n] } }
+    fn with_layers(n: usize) -> Self {
+        Self {
+            layers: vec![LayerCache::default(); n],
+        }
+    }
 }
 
 fn build_inv_freq(head_dim: usize, theta: f32) -> Array1<f32> {
@@ -189,7 +197,13 @@ struct Attention {
 }
 
 impl Attention {
-    fn apply_rope(&self, q: &mut Array2<f32>, k: &mut Array2<f32>, cos: &Array2<f32>, sin: &Array2<f32>) {
+    fn apply_rope(
+        &self,
+        q: &mut Array2<f32>,
+        k: &mut Array2<f32>,
+        cos: &Array2<f32>,
+        sin: &Array2<f32>,
+    ) {
         // q,k: [seq, head_dim]
         // q_new = q * cos + rotate_half(q) * sin
         let q_orig = q.clone();
@@ -216,14 +230,19 @@ impl Attention {
             let src = kv.slice(s![.., h * self.head_dim..(h + 1) * self.head_dim]);
             for g in 0..groups {
                 let dst_h = h * groups + g;
-                let mut dst = out.slice_mut(s![.., dst_h * self.head_dim..(dst_h + 1) * self.head_dim]);
+                let mut dst =
+                    out.slice_mut(s![.., dst_h * self.head_dim..(dst_h + 1) * self.head_dim]);
                 dst.assign(&src);
             }
         }
         out
     }
 
-    fn forward(&self, x: &Array2<f32>, past: Option<&LayerCache>) -> (Array2<f32>, Array2<f32>, Array2<f32>) {
+    fn forward(
+        &self,
+        x: &Array2<f32>,
+        past: Option<&LayerCache>,
+    ) -> (Array2<f32>, Array2<f32>, Array2<f32>) {
         let seq = x.shape()[0];
         let q_all = self.q.forward(x); // [seq, n_heads*head_dim]
         let k_all = self.k.forward(x); // [seq, n_kv_heads*head_dim]
@@ -244,7 +263,9 @@ impl Attention {
             let mut q_rows: Vec<Array1<f32>> = Vec::with_capacity(self.n_heads);
             let mut k_rows: Vec<Array1<f32>> = Vec::with_capacity(self.n_heads);
             for h in 0..self.n_heads {
-                let qh1 = q_all.slice(s![0, h * self.head_dim..(h + 1) * self.head_dim]).to_owned();
+                let qh1 = q_all
+                    .slice(s![0, h * self.head_dim..(h + 1) * self.head_dim])
+                    .to_owned();
                 let kh1 = k_full_curr
                     .slice(s![0, h * self.head_dim..(h + 1) * self.head_dim])
                     .to_owned();
@@ -273,12 +294,16 @@ impl Attention {
                 if let Some(kc) = &k_cache_h {
                     for t in 0..t_cache {
                         let mut acc = 0.0f32;
-                        for d in 0..self.head_dim { acc += qh[d] * kc[(t, d)]; }
+                        for d in 0..self.head_dim {
+                            acc += qh[d] * kc[(t, d)];
+                        }
                         logits[t] = acc * scale;
                     }
                 }
                 let mut acc = 0.0f32;
-                for d in 0..self.head_dim { acc += qh[d] * k_curr[d]; }
+                for d in 0..self.head_dim {
+                    acc += qh[d] * k_curr[d];
+                }
                 logits[t_cache] = acc * scale;
 
                 let probs = softmax1(logits.view()).unwrap();
@@ -287,7 +312,9 @@ impl Attention {
                 if let Some(vc) = &v_cache_h {
                     for d in 0..self.head_dim {
                         let mut s = 0.0f32;
-                        for t in 0..t_cache { s += probs[t] * vc[(t, d)]; }
+                        for t in 0..t_cache {
+                            s += probs[t] * vc[(t, d)];
+                        }
                         out[(0, d)] = s;
                     }
                 }
@@ -309,7 +336,8 @@ impl Attention {
 
             let mut k_full_post = Array2::<f32>::zeros((1, self.n_heads * self.head_dim));
             for h in 0..self.n_heads {
-                let mut dst = k_full_post.slice_mut(s![0, h * self.head_dim..(h + 1) * self.head_dim]);
+                let mut dst =
+                    k_full_post.slice_mut(s![0, h * self.head_dim..(h + 1) * self.head_dim]);
                 dst.assign(&k_rows[h]);
             }
             let v_full_post = v_full_curr;
@@ -319,15 +347,23 @@ impl Attention {
 
         let (cos_all, sin_all) = rope_cos_sin(seq, self.head_dim, self.rope_theta);
         for h in 0..self.n_heads {
-            let qh = q_all.slice(s![.., h * self.head_dim..(h + 1) * self.head_dim]).to_owned();
-            let kh = self.repeat_kv(&k_all)
+            let qh = q_all
+                .slice(s![.., h * self.head_dim..(h + 1) * self.head_dim])
+                .to_owned();
+            let kh = self
+                .repeat_kv(&k_all)
                 .slice(s![.., h * self.head_dim..(h + 1) * self.head_dim])
                 .to_owned();
             let cos = cos_all.view();
             let sin = sin_all.view();
             let mut qh_applied = qh.clone();
             let mut kh_applied = kh.clone();
-            self.apply_rope(&mut qh_applied, &mut kh_applied, &cos.to_owned(), &sin.to_owned());
+            self.apply_rope(
+                &mut qh_applied,
+                &mut kh_applied,
+                &cos.to_owned(),
+                &sin.to_owned(),
+            );
             q_heads.push(qh_applied);
             k_heads_curr.push(kh_applied);
         }
@@ -341,13 +377,19 @@ impl Attention {
             let scale = (self.head_dim as f32).powf(-0.5);
             let mut logits = qh.dot(&kh.t());
             logits.mapv_inplace(|v| v * scale);
-            for i in 0..seq { for j in (i + 1)..seq { logits[(i, j)] = -1e9; } }
+            for i in 0..seq {
+                for j in (i + 1)..seq {
+                    logits[(i, j)] = -1e9;
+                }
+            }
             let mut out = Array2::<f32>::zeros((seq, self.head_dim));
             for i in 0..seq {
                 let probs = softmax1(logits.slice(s![i, ..])).unwrap();
                 for d in 0..self.head_dim {
                     let mut acc = 0.0f32;
-                    for t in 0..seq { acc += probs[t] * vh[(t, d)]; }
+                    for t in 0..seq {
+                        acc += probs[t] * vh[(t, d)];
+                    }
                     out[(i, d)] = acc;
                 }
             }
@@ -380,7 +422,11 @@ struct DecoderLayer {
     mlp: Mlp,
 }
 impl DecoderLayer {
-    fn forward(&self, x: &Array2<f32>, cache: Option<&LayerCache>) -> (Array2<f32>, Array2<f32>, Array2<f32>) {
+    fn forward(
+        &self,
+        x: &Array2<f32>,
+        cache: Option<&LayerCache>,
+    ) -> (Array2<f32>, Array2<f32>, Array2<f32>) {
         let x_norm = self.input_norm.forward(x);
         let (attn, k_new, v_new) = self.attn.forward(&x_norm, cache);
         let x1 = x + &attn; // residual add
@@ -420,12 +466,21 @@ impl<'a> Model<'a> for LlamaModel {
     type Cache = LlamaCache;
 
     fn from_safetensors(tensors: SafeTensors<'a>) -> anyhow::Result<Self> {
-        let embed = to_f32_2(load_array2::<Bf16Wrapper>(&tensors, "model.embed_tokens.weight")?);
+        let embed = to_f32_2(load_array2::<Bf16Wrapper>(
+            &tensors,
+            "model.embed_tokens.weight",
+        )?);
         let hidden_size = embed.shape()[1];
 
         // using layer 0 to infer heads
-        let q_w = to_f32_2(load_array2::<Bf16Wrapper>(&tensors, "model.layers.0.self_attn.q_proj.weight")?);
-        let k_w = to_f32_2(load_array2::<Bf16Wrapper>(&tensors, "model.layers.0.self_attn.k_proj.weight")?);
+        let q_w = to_f32_2(load_array2::<Bf16Wrapper>(
+            &tensors,
+            "model.layers.0.self_attn.q_proj.weight",
+        )?);
+        let k_w = to_f32_2(load_array2::<Bf16Wrapper>(
+            &tensors,
+            "model.layers.0.self_attn.k_proj.weight",
+        )?);
         let q_out = q_w.shape()[0];
         let k_out = k_w.shape()[0];
 
@@ -437,7 +492,12 @@ impl<'a> Model<'a> for LlamaModel {
             .copied()
             .filter(|&d| d != 0 && q_out % d == 0 && k_out % d == 0)
             .find(|&d| d == 64)
-            .or_else(|| candidate_head_dims.iter().copied().find(|&d| d != 0 && q_out % d == 0 && k_out % d == 0))
+            .or_else(|| {
+                candidate_head_dims
+                    .iter()
+                    .copied()
+                    .find(|&d| d != 0 && q_out % d == 0 && k_out % d == 0)
+            })
             .unwrap_or_else(|| {
                 for d in 1..=512 {
                     if q_out % d == 0 && k_out % d == 0 {
@@ -472,8 +532,13 @@ impl<'a> Model<'a> for LlamaModel {
                 head_dim,
                 rope_theta,
             };
-            let input_norm = Self::rmsnorm(&tensors, &format!("{}input_layernorm.weight", base), 1e-6)?;
-            let post_attn_norm = Self::rmsnorm(&tensors, &format!("{}post_attention_layernorm.weight", base), 1e-6)?;
+            let input_norm =
+                Self::rmsnorm(&tensors, &format!("{}input_layernorm.weight", base), 1e-6)?;
+            let post_attn_norm = Self::rmsnorm(
+                &tensors,
+                &format!("{}post_attention_layernorm.weight", base),
+                1e-6,
+            )?;
             let mlp = Mlp {
                 gate: Self::linear(&tensors, &format!("{}mlp.gate_proj.weight", base))?,
                 up: Self::linear(&tensors, &format!("{}mlp.up_proj.weight", base))?,
@@ -508,7 +573,9 @@ impl<'a> Model<'a> for LlamaModel {
         })
     }
 
-    fn new_cache(&self) -> Self::Cache { LlamaCache::with_layers(self.layers.len()) }
+    fn new_cache(&self) -> Self::Cache {
+        LlamaCache::with_layers(self.layers.len())
+    }
 
     fn forward(&self, tokens: &[u32], cache: &mut Self::Cache) -> anyhow::Result<u32> {
         let (mut x, seq_len) = if cache.layers[0].is_empty() {
@@ -520,18 +587,25 @@ impl<'a> Model<'a> for LlamaModel {
         };
 
         for (i, layer) in self.layers.iter().enumerate() {
-            let past_layer = if cache.layers[i].is_empty() { None } else { Some(&cache.layers[i]) };
+            let past_layer = if cache.layers[i].is_empty() {
+                None
+            } else {
+                Some(&cache.layers[i])
+            };
             let (x_out, k_new, v_new) = layer.forward(&x, past_layer);
             cache.layers[i].append(&k_new, &v_new);
             x = x_out;
         }
 
         x = self.norm.forward(&x);
-        let last_hidden: Array2<f32> = if seq_len == 1 { x } else { x.slice(s![-1, ..]).to_owned().insert_axis(Axis(0)) };
+        let last_hidden: Array2<f32> = if seq_len == 1 {
+            x
+        } else {
+            x.slice(s![-1, ..]).to_owned().insert_axis(Axis(0))
+        };
         let logits: Array2<f32> = last_hidden.dot(&self.lm_head.t());
         let probs = softmax1(logits.slice(s![0, ..]))?;
         let sample = multinomial(probs, 1);
         Ok(sample[0] as u32)
     }
 }
-

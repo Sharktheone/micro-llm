@@ -1,10 +1,12 @@
-use half::bf16;
-use ndarray::{ScalarOperand};
-use num_traits::{Float, FromPrimitive, Zero, One, NumCast, ToPrimitive, Num};
-use std::ops::{Add, Sub, Mul, Div, Neg, AddAssign, SubAssign, MulAssign, DivAssign, Rem, RemAssign};
-use std::fmt::{Debug, Display};
 use bytemuck::{AnyBitPattern, Zeroable};
+use half::bf16;
+use ndarray::ScalarOperand;
+use num_traits::{Float, FromPrimitive, Num, NumCast, One, ToPrimitive, Zero};
 use safetensors::Dtype;
+use std::fmt::{Debug, Display};
+use std::ops::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
+};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
 #[repr(transparent)]
@@ -262,7 +264,9 @@ impl Float for Bf16Wrapper {
     }
 
     fn mul_add(self, a: Self, b: Self) -> Self {
-        Self(bf16::from_f32(self.0.to_f32().mul_add(a.0.to_f32(), b.0.to_f32())))
+        Self(bf16::from_f32(
+            self.0.to_f32().mul_add(a.0.to_f32(), b.0.to_f32()),
+        ))
     }
 
     fn recip(self) -> Self {
@@ -322,7 +326,9 @@ impl Float for Bf16Wrapper {
     }
 
     fn abs_sub(self, other: Self) -> Self {
-        Self(bf16::from_f32((self.0.to_f32() - other.0.to_f32()).max(0.0)))
+        Self(bf16::from_f32(
+            (self.0.to_f32() - other.0.to_f32()).max(0.0),
+        ))
     }
 
     fn cbrt(self) -> Self {
@@ -428,7 +434,6 @@ impl NumCast for Bf16Wrapper {
 }
 
 impl ScalarOperand for Bf16Wrapper {}
-
 
 impl crate::load::DType for Bf16Wrapper {
     fn dtype() -> Dtype {
