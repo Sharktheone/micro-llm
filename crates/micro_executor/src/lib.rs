@@ -1,8 +1,7 @@
 pub mod load;
 pub mod model;
 pub mod nn;
-
-use half::bf16;
+pub mod bf16_wrapper;
 
 #[test]
 fn load_safetensors() {
@@ -28,7 +27,7 @@ fn load_safetensors() {
 
     let layer = model.tensor("model.norm.weight").unwrap();
 
-    let data = bytemuck::cast_slice::<u8, bf16>(layer.data());
+    let data = bytemuck::cast_slice::<u8, half::bf16>(layer.data());
 
     let array = ndarray::ArrayView::from_shape(layer.shape(), data).unwrap();
 
