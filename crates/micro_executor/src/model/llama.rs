@@ -1,7 +1,8 @@
-use std::ops::{Index, Not};
+use std::slice;
 use ndarray::{s, Array2, Array3, LinalgScalar, Axis, concatenate, ArrayView3, ScalarOperand, Array1};
+use ndarray_rand::rand_distr::uniform::SampleUniform;
 use num_traits::{Float, FromPrimitive, Zero};
-use crate::nn::{silu, softmax3, Embedding, Linear, RmsNorm};
+use crate::nn::{multinomial, silu, softmax1, softmax3, Embedding, Linear, RmsNorm};
 
 
 pub struct LlamaCache<T> {
@@ -17,7 +18,7 @@ pub struct LlamaModel<'a, T> {
     lm_head: Linear<'a, T>,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + Not + ScalarOperand> LlamaModel<'_, T> {
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> LlamaModel<'_, T> {
     pub fn forward(
         &self,
         x: &[usize],
@@ -33,7 +34,7 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + Not + ScalarOperan
         }
 
         let x = self.ln_f.forward(&x)?;
-        let x = x.index_axis(Axis(0) , seq_len - 1);
+        let x = x.index_axis(Axis(0), seq_len - 1);
         let x = x.to_owned();
         let x = x.insert_axis(Axis(0));
 
@@ -41,6 +42,32 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + Not + ScalarOperan
 
 
         Ok(x.index_axis(Axis(0), 0).to_owned())
+    }
+}
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Default + SampleUniform + for<'a> std::ops::AddAssign<&'a T>> LlamaModel<'_, T> {
+    pub fn next_token(
+        &self,
+        x: &[usize],
+        is_first: bool,
+        cache: &mut LlamaCache<T>,
+    ) -> anyhow::Result<usize> {
+        let (ctx, index_pos) = if is_first {
+            (x, 0)
+        } else {
+            let last = x.last().unwrap();
+
+            (slice::from_ref(last), x.len() - 1)
+        };
+
+
+        let logits = self.forward(ctx, index_pos, cache)?;
+
+        let probs = softmax1(logits.view())?;
+
+        let token = multinomial(probs, 1)[0];
+
+
+        Ok(token)
     }
 }
 
@@ -51,7 +78,7 @@ pub struct LlamaBlock<'a, T> {
     ln_2: RmsNorm<'a, T>,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + Not + ScalarOperand> LlamaBlock<'_, T> {
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> LlamaBlock<'_, T> {
     pub fn forward(
         &self,
         x: &Array2<T>,
@@ -88,7 +115,7 @@ pub struct LlamaAttention<'a, T> {
 }
 
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + Not + ScalarOperand> LlamaAttention<'_, T> {
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> LlamaAttention<'_, T> {
     pub fn forward(&self, x: &Array2<T>, index_pos: usize, block_idx: usize, cache: &mut LlamaCache<T>) -> anyhow::Result<Array2<T>> {
         let (seq_len, hidden_size) = x.dim();
 
