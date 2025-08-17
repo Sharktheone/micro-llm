@@ -1,4 +1,9 @@
 use crate::nn::{Embedding, Linear, RmsNorm};
+pub struct LlamaCache<T> {
+    cos: ndarray::Array2<T>,
+    sin: ndarray::Array2<T>,
+    kvs: Vec<Option<(ndarray::Array3<T>, ndarray::Array3<T>)>>,
+}
 
 pub struct LlamaModel<'a, T> {
     embedding: Embedding<'a, T>,
