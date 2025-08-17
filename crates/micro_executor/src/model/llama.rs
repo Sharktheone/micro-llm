@@ -1,15 +1,13 @@
-use std::marker::PhantomData;
-use std::ops::Not;
-use ndarray::{s, Array2, Array3, LinalgScalar, Axis, Array, concatenate, ArrayView3, ScalarOperand};
+use std::ops::{Index, Not};
+use ndarray::{s, Array2, Array3, LinalgScalar, Axis, concatenate, ArrayView3, ScalarOperand, Array1};
 use num_traits::{Float, FromPrimitive, Zero};
-use num_traits::real::Real;
 use crate::nn::{silu, softmax3, Embedding, Linear, RmsNorm};
 
 
 pub struct LlamaCache<T> {
-    cos: ndarray::Array2<T>,
-    sin: ndarray::Array2<T>,
-    kvs: Vec<Option<(ndarray::Array3<T>, ndarray::Array3<T>)>>,
+    cos: Array2<T>,
+    sin: Array2<T>,
+    kvs: Vec<Option<(Array3<T>, Array3<T>)>>,
 }
 
 pub struct LlamaModel<'a, T> {
@@ -19,11 +17,62 @@ pub struct LlamaModel<'a, T> {
     lm_head: Linear<'a, T>,
 }
 
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + Not + ScalarOperand> LlamaModel<'_, T> {
+    pub fn forward(
+        &self,
+        x: &[usize],
+        index_pos: usize,
+        cache: &mut LlamaCache<T>,
+    ) -> anyhow::Result<Array1<T>> {
+        let seq_len = x.len();
+
+        let mut x = self.embedding.forward(x);
+
+        for (block_idx, block) in self.blocks.iter().enumerate() {
+            x = block.forward(&x, index_pos, block_idx, cache)?;
+        }
+
+        let x = self.ln_f.forward(&x)?;
+        let x = x.index_axis(Axis(0) , seq_len - 1);
+        let x = x.to_owned();
+        let x = x.insert_axis(Axis(0));
+
+        let x = self.lm_head.forward(&x);
+
+
+        Ok(x.index_axis(Axis(0), 0).to_owned())
+    }
+}
+
 pub struct LlamaBlock<'a, T> {
     attn: LlamaAttention<'a, T>,
     mlp: LlamaMlp<'a, T>,
     ln_1: RmsNorm<'a, T>,
     ln_2: RmsNorm<'a, T>,
+}
+
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + Not + ScalarOperand> LlamaBlock<'_, T> {
+    pub fn forward(
+        &self,
+        x: &Array2<T>,
+        index_pos: usize,
+        block_idx: usize,
+        cache: &mut LlamaCache<T>,
+    ) -> anyhow::Result<Array2<T>> {
+        let residual = x;
+
+        let x = self.ln_1.forward(x)?;
+
+        let x = self.attn.forward(&x, index_pos, block_idx, cache)? + residual;
+
+        let residual = &x;
+
+        let x = self.ln_2.forward(&x)?;
+
+        let x = self.mlp.forward(&x) + residual;
+
+        Ok(x)
+    }
 }
 
 
