@@ -5,15 +5,18 @@ use num_traits::{Float, FromPrimitive, Zero};
 use safetensors::SafeTensors;
 
 pub struct LayerNorm<'a, T> {
-    weight: ArrayView1<'a, T>,
-    bias: ArrayView1<'a, T>,
+    pub weight: ArrayView1<'a, T>,
+    pub bias: ArrayView1<'a, T>,
+    pub eps: T,
 }
 
 impl<'a, T: Loadable> LayerNorm<'a, T> {
     pub fn from_safe_tensors(model: &SafeTensors<'a>, prefix: &str) -> LoadResult<Self> {
         let weight = load_array1(model, &format!("{}weight", prefix))?;
         let bias = load_array1(model, &format!("{}bias", prefix))?;
-        Ok(LayerNorm { weight, bias })
+        let eps = T::from_f32(1e-5).ok_or(anyhow::anyhow!("T not from f32"))?;
+
+        Ok(LayerNorm { weight, bias,  eps })
     }
 }
 
@@ -39,8 +42,7 @@ where
             .broadcast((x.shape()[0], x.shape()[1]))
             .ok_or(anyhow::anyhow!("broadcast error"))?;
 
-        let epsilon = T::from_f32(1e-5).ok_or(anyhow::anyhow!("T not from f32"))?;
-        let a = (variance + epsilon).sqrt();
+        let a = (variance + self.eps).sqrt();
 
         let a = a.insert_axis(ndarray::Axis(1));
         let a = a
