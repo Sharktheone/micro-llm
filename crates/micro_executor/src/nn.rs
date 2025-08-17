@@ -5,6 +5,7 @@ mod linear;
 mod multinomial;
 mod silu;
 mod softmax;
+mod rms_norm;
 
 pub use embedding::*;
 pub use gelu::*;
@@ -13,6 +14,7 @@ pub use linear::*;
 pub use multinomial::*;
 pub use silu::*;
 pub use softmax::*;
+pub use rms_norm::*;
 
 use safetensors::SafeTensors;
 
