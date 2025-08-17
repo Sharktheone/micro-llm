@@ -1,4 +1,6 @@
 use crate::nn::{Embedding, Linear, RmsNorm};
+use ndarray::{s, Array2, Array3, LinalgScalar, Axis, Array, concatenate, ArrayView3, ScalarOperand};
+use num_traits::{Float, FromPrimitive, Zero};
 pub struct LlamaCache<T> {
     cos: ndarray::Array2<T>,
     sin: ndarray::Array2<T>,
@@ -35,4 +37,18 @@ pub struct LlamaMlp<'a, T> {
     c_fc1: Linear<'a, T>,
     c_fc2: Linear<'a, T>,
     c_proj: Linear<'a, T>,
+}
+
+
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive> LlamaMlp<'_, T> {
+    fn forward(&self, x: &ndarray::Array2<T>) -> ndarray::Array2<T> {
+        let x = self.c_fc1.forward(x);
+        let x = silu(x);
+        let x = self.c_fc2.forward(&x);
+
+        let x = self.c_proj.forward(&x);
+
+        x
+
+    }
 }
