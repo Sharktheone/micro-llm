@@ -14,7 +14,7 @@ impl<'a, T: Loadable> LayerNorm<'a, T> {
     pub fn from_safe_tensors(model: &SafeTensors<'a>, prefix: &str) -> LoadResult<Self> {
         let weight = load_array1(model, &format!("{}weight", prefix))?;
         let bias = load_array1(model, &format!("{}bias", prefix))?;
-        let eps = T::from_f32(1e-5).ok_or(anyhow::anyhow!("T not from f32"))?;
+        let eps = T::from_f32(1e-5).expect("failed to convert to float");
 
         Ok(LayerNorm { weight, bias,  eps })
     }
