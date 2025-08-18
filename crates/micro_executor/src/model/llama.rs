@@ -2,6 +2,7 @@ use std::slice;
 use ndarray::{s, Array2, Array3, LinalgScalar, Axis, concatenate, ArrayView3, ScalarOperand, Array1};
 use ndarray_rand::rand_distr::uniform::SampleUniform;
 use num_traits::{Float, FromPrimitive, Zero};
+use crate::load::Loadable;
 use crate::nn::{multinomial, silu, softmax1, softmax3, Embedding, Linear, RmsNorm};
 
 
@@ -9,6 +10,15 @@ pub struct LlamaCache<T> {
     cos: Array2<T>,
     sin: Array2<T>,
     kvs: Vec<Option<(Array3<T>, Array3<T>)>>,
+}
+
+pub struct LlamaConfig<T> {
+    num_blocks: usize,
+    num_heads: usize,
+    num_kv_heads: usize,
+    head_dim: usize,
+    max_pos_emb: usize,
+    eps: T,
 }
 
 pub struct LlamaModel<'a, T> {
@@ -44,6 +54,26 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> Lla
         Ok(x.index_axis(Axis(0), 0).to_owned())
     }
 }
+
+impl<'a, T: Loadable> LlamaModel<'a, T> {
+    pub fn from_safe_tensors(model: &safetensors::SafeTensors<'a>, prefix: &str, config: &LlamaConfig<T>) -> anyhow::Result<Self> {
+        let embedding = Embedding::from_safe_tensors(model, &format!("{}model.embed_tokens.", prefix))?;
+        let mut blocks = Vec::with_capacity(config.num_blocks);
+
+        for i in 0..config.num_blocks {
+            let block = LlamaBlock::from_safe_tensors(model, &format!("{}model.layers.{i}.", prefix), config)?;
+            blocks.push(block);
+        }
+
+        let ln_f = RmsNorm::from_safe_tensors(model, &format!("{}model.norm.", prefix), config.eps)?;
+        let lm_head = Linear::from_safe_tensors(model, &format!("{}model.output_layernorm.", prefix))?;
+
+        Ok(LlamaModel { embedding, blocks, ln_f, lm_head })
+
+    }
+}
+
+
 impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Default + SampleUniform + for<'a> std::ops::AddAssign<&'a T>> LlamaModel<'_, T> {
     pub fn next_token(
         &self,
@@ -99,6 +129,17 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> Lla
         let x = self.mlp.forward(&x) + residual;
 
         Ok(x)
+    }
+}
+
+impl<'a, T: Loadable> LlamaBlock<'a, T> {
+    pub fn from_safe_tensors(model: &safetensors::SafeTensors<'a>, prefix: &str, config: &LlamaConfig<T>) -> anyhow::Result<Self> {
+        let attn = LlamaAttention::from_safe_tensors(model, &format!("{}self_attn.", prefix), config)?;
+        let mlp = LlamaMlp::from_safe_tensors(model, &format!("{}mlp.", prefix))?;
+        let ln_1 = RmsNorm::from_safe_tensors(model, &format!("{}input_layernorm.", prefix), config.eps)?;
+        let ln_2 = RmsNorm::from_safe_tensors(model, &format!("{}post_attention_layernorm.", prefix), config.eps)?;
+
+        Ok(LlamaBlock { attn, mlp, ln_1, ln_2 })
     }
 }
 
@@ -258,6 +299,28 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> Lla
     }
 }
 
+impl<'a, T: Loadable> LlamaAttention<'a, T> {
+    pub fn from_safe_tensors(model: &safetensors::SafeTensors<'a>, prefix: &str, conf: &LlamaConfig<T>) -> anyhow::Result<Self> {
+        let q_proj = Linear::from_safe_tensors(model, &format!("{}q_proj.", prefix))?;
+        let k_proj = Linear::from_safe_tensors(model, &format!("{}k_proj.", prefix))?;
+        let v_proj = Linear::from_safe_tensors(model, &format!("{}v_proj.", prefix))?;
+        let o_proj = Linear::from_safe_tensors(model, &format!("{}o_proj.", prefix))?;
+
+
+
+        Ok(LlamaAttention {
+            q_proj,
+            k_proj,
+            v_proj,
+            o_proj,
+            num_heads: conf.num_heads,
+            num_kv_heads: conf.num_kv_heads,
+            head_dim: conf.head_dim,
+            max_pos_emb: conf.max_pos_emb,
+        })
+    }
+}
+
 pub struct LlamaMlp<'a, T> {
     c_fc1: Linear<'a, T>,
     c_fc2: Linear<'a, T>,
@@ -275,6 +338,16 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive> LlamaMlp<'_, T> {
 
         x
 
+    }
+}
+
+impl<'a, T: Loadable> LlamaMlp<'a, T> {
+    pub fn from_safe_tensors(model: &safetensors::SafeTensors<'a>, prefix: &str) -> anyhow::Result<Self> {
+        let c_fc1 = Linear::from_safe_tensors(model, &format!("{}gate_proj.", prefix))?;
+        let c_fc2 = Linear::from_safe_tensors(model, &format!("{}up_proj.", prefix))?;
+        let c_proj = Linear::from_safe_tensors(model, &format!("{}down_proj.", prefix))?;
+
+        Ok(LlamaMlp { c_fc1, c_fc2, c_proj })
     }
 }
 
