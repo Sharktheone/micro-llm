@@ -7,8 +7,10 @@ use std::fmt::{Debug, Display};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
+use ndarray_rand::rand::Rng;
+use ndarray_rand::rand_distr::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 #[repr(transparent)]
 pub struct Bf16Wrapper(pub bf16);
 
@@ -409,6 +411,59 @@ impl Float for Bf16Wrapper {
     }
 }
 
+impl SampleUniform for Bf16Wrapper {
+    type Sampler = UniformBf16Wrapper;
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct UniformBf16Wrapper {
+    low: f32,
+    range: f32,
+}
+
+impl UniformSampler for UniformBf16Wrapper {
+    type X = Bf16Wrapper;
+
+    fn new<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        let low_f32 = low.borrow().to_f32().unwrap_or(0.0);
+        let high_f32 = high.borrow().to_f32().unwrap_or(1.0);
+        Self {
+            low: low_f32,
+            range: high_f32 - low_f32,
+        }
+    }
+
+    fn new_inclusive<B1, B2>(low: B1, high: B2) -> Self
+    where
+        B1: SampleBorrow<Self::X> + Sized,
+        B2: SampleBorrow<Self::X> + Sized,
+    {
+        let low_f32 = low.borrow().to_f32().unwrap_or(0.0);
+        let high_f32 = high.borrow().to_f32().unwrap_or(1.0);
+        // For inclusive range, we need to add a small epsilon to include the high value
+        let epsilon = f32::EPSILON;
+        Self {
+            low: low_f32,
+            range: high_f32 - low_f32 + epsilon,
+        }
+    }
+
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Self::X {
+        let sample: f32 = rng.r#gen();
+        Bf16Wrapper::from_f32(self.low + sample * self.range)
+    }
+}
+
+impl AddAssign<&'_ Self> for Bf16Wrapper {
+    fn add_assign(&mut self, rhs: &Self) {
+        self.0 += rhs.0;
+    }
+}
+
 impl FromPrimitive for Bf16Wrapper {
     fn from_i64(n: i64) -> Option<Self> {
         Some(Self(bf16::from_f32(n as f32)))
@@ -444,3 +499,38 @@ impl crate::load::DType for Bf16Wrapper {
 unsafe impl Zeroable for Bf16Wrapper {}
 
 unsafe impl AnyBitPattern for Bf16Wrapper {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
