@@ -1,5 +1,6 @@
 use ndarray::{Array2, ArrayView1, ScalarOperand, Axis};
 use num_traits::{Float, FromPrimitive, Zero};
+use crate::load::{load_array1, Loadable};
 
 pub struct RmsNorm<'a, T> {
     pub weight: ArrayView1<'a, T>,
@@ -41,5 +42,13 @@ impl<'a, T> RmsNorm<'a, T> {
             .ok_or_else(|| anyhow::anyhow!("RmsNorm: failed to broadcast weight"))?;
 
         Ok(normalized * &weight_b)
+    }
+}
+
+impl<'a, T: Loadable> RmsNorm<'a, T> {
+    pub fn from_safe_tensors(model: &safetensors::SafeTensors<'a>, prefix: &str, eps: T) -> anyhow::Result<Self> {
+        let weight = load_array1(model, &format!("{}weight", prefix))?;
+
+        Ok(RmsNorm { weight, eps })
     }
 }
