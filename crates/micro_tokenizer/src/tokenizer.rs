@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-type TokenId = u32;
+pub type TokenId = u32;
 
 pub struct Tokenizer {
     expanded: Vec<u8>,
@@ -137,9 +137,7 @@ impl Tokenizer {
     }
 
     pub fn decode_token(&self, token: TokenId) -> Option<String> {
-        let Some(range) = self.vocab.get(token as usize) else {
-            return None;
-        };
+        let range = self.vocab.get(token as usize)?;
 
         let voc = self.expanded.get_range(*range);
 
