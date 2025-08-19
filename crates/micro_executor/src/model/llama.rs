@@ -1,11 +1,12 @@
 use std::f32::consts::PI;
+use std::fmt::{Debug, Display};
 use crate::load::Loadable;
 use crate::nn::{multinomial, silu, softmax1, softmax3, Embedding, LinearNoBias, RmsNorm};
 use ndarray::{
     concatenate, s, Array1, Array2, Array3, ArrayView3, Axis, LinalgScalar, ScalarOperand,
 };
 use ndarray_rand::rand_distr::uniform::SampleUniform;
-use num_traits::{Float, FloatConst, FromPrimitive, One, Zero};
+use num_traits::{AsPrimitive, Float, FloatConst, FromPrimitive, One, Zero};
 use std::slice;
 
 pub struct LlamaCache<T> {
@@ -365,29 +366,43 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
         let cos = cache.cos.slice(s![index_pos..index_pos + seq_len, ..]);
         let sin = cache.sin.slice(s![index_pos..index_pos + seq_len, ..]);
 
-        let cos_b_axis = cos.insert_axis(Axis(0));
 
-        let cos_b = cos_b_axis
-            .broadcast((n_head, seq_len, cos.dim().1))
-            .expect("broadcast cos failed");
 
         let sin_b_axis = sin.insert_axis(Axis(0));
+        let x = x.as_standard_layout();
+        let cos = cos.as_standard_layout();
+        let sin = sin.as_standard_layout();
 
-        let sin_b = sin_b_axis
-            .broadcast((n_head, seq_len, sin.dim().1))
-            .expect("broadcast sin failed");
+        let x_view = x.as_slice().unwrap();;
+        let cos = cos.as_slice().unwrap();
+        let sin = sin.as_slice().unwrap();
 
-        let x_even = x.slice(s![.., .., 0..; 2]); // shape: (n_head, seq_len, half)
-        let x_odd = x.slice(s![.., .., 1..; 2]); // shape: (n_head, seq_len, half)
+        let mut output = vec![T::zero(); x_view.len()];
 
         let out_even = &x_even * &cos_b - &x_odd * &sin_b;
         let out_odd = &x_even * &sin_b + &x_odd * &cos_b;
+        let s = x.shape();
+        let h = s[0];
+        let t = s[1];
+        let d = s[2];
 
-        let mut y = x.to_owned();
-        y.slice_mut(s![.., .., 0..; 2]).assign(&out_even);
-        y.slice_mut(s![.., .., 1..; 2]).assign(&out_odd);
+        x_view.chunks(t*d)
+            .zip(output.chunks_mut(t*d))
+            .enumerate()
+            .for_each(|(bh_i, (src, dst))| {
+                for i_t in 0..t {
+                    for i_d in 0..d / 2 {
+                        let i1 = i_t * d + i_d;
+                        let i2 = i1 + d / 2;
+                        let i_cs = i_t * (d / 2) + i_d;
 
-        y
+                        dst[i1] = src[i1] * cos[i_cs] - src[i2] * sin[i_cs];
+                        dst[i2] = src[i1] * sin[i_cs] + src[i2] * cos[i_cs];
+                    }
+                }
+            });
+
+        Array3::from_shape_vec((n_head, seq_len, hidden_size), output).unwrap()
     }
 
     pub fn repeat_kv(&self, x: Array3<T>) -> anyhow::Result<Array3<T>> {
