@@ -4,11 +4,12 @@ use crate::load::{load_array1, Loadable};
 
 pub struct RmsNorm<'a, T> {
     pub weight: ArrayView1<'a, T>,
-    pub eps: T,
+    pub eps: f32,
 }
 
 impl<'a, T> RmsNorm<'a, T> {
     pub fn new(weight: ArrayView1<'a, T>, eps: T) -> Self {
+    pub fn new(weight: ArrayView1<'a, T>, eps: f32) -> Self {
         Self { weight, eps }
     }
 

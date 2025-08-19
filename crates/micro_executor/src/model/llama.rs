@@ -107,7 +107,7 @@ pub struct LlamaModel<'a, T> {
     lm_head: LinearNoBias<'a, T>,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> LlamaModel<'_, T> {
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Debug + Display + AsPrimitive<f32>> LlamaModel<'_, T> {
     pub fn forward(
         &self,
         x: &[usize],
@@ -153,7 +153,7 @@ impl<'a, T: Loadable> LlamaModel<'a, T> {
         }
 
         let ln_f =
-            RmsNorm::from_safe_tensors(model, &format!("{}model.norm.", prefix), T::from_f32(config.eps).unwrap())?;
+            RmsNorm::from_safe_tensors(model, &format!("{}model.norm.", prefix), config.eps)?;
         let lm_head =
             LinearNoBias::from_safe_tensors(model, &format!("{}model.embed_tokens.", prefix))?;
 
@@ -175,6 +175,9 @@ impl<
         + ScalarOperand
         + Default
         + SampleUniform
+        + Debug
+        + Display
+        + AsPrimitive<f32>
         + for<'a> std::ops::AddAssign<&'a T>,
 > LlamaModel<'_, T>
 {
@@ -209,7 +212,7 @@ pub struct LlamaBlock<'a, T> {
     ln_2: RmsNorm<'a, T>,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> LlamaBlock<'_, T> {
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Display + Debug + AsPrimitive<f32>> LlamaBlock<'_, T> {
     pub fn forward(
         &self,
         x: &Array2<T>,
@@ -243,11 +246,11 @@ impl<'a, T: Loadable> LlamaBlock<'a, T> {
             LlamaAttention::from_safe_tensors(model, &format!("{}self_attn.", prefix), config)?;
         let mlp = LlamaMlp::from_safe_tensors(model, &format!("{}mlp.", prefix))?;
         let ln_1 =
-            RmsNorm::from_safe_tensors(model, &format!("{}input_layernorm.", prefix), T::from_f32(config.eps).unwrap())?;
+            RmsNorm::from_safe_tensors(model, &format!("{}input_layernorm.", prefix), config.eps)?;
         let ln_2 = RmsNorm::from_safe_tensors(
             model,
             &format!("{}post_attention_layernorm.", prefix),
-            T::from_f32(config.eps).unwrap(),
+            config.eps
         )?;
 
         Ok(LlamaBlock {
@@ -270,7 +273,7 @@ pub struct LlamaAttention<'a, T> {
     max_pos_emb: usize,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand> LlamaAttention<'_, T> {
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Display> LlamaAttention<'_, T> {
     pub fn forward(
         &self,
         x: &Array2<T>,
