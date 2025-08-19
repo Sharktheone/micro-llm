@@ -1,7 +1,7 @@
 use bytemuck::{AnyBitPattern, Zeroable};
 use half::bf16;
 use ndarray::ScalarOperand;
-use num_traits::{Float, FromPrimitive, Num, NumCast, One, ToPrimitive, Zero};
+use num_traits::{AsPrimitive, Float, FromPrimitive, Num, NumCast, One, ToPrimitive, Zero};
 use safetensors::Dtype;
 use std::fmt::{Debug, Display};
 use std::ops::{
@@ -52,13 +52,13 @@ impl From<f32> for Bf16Wrapper {
 
 impl Debug for Bf16Wrapper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Bf16Wrapper({:?})", self.0)
+        Debug::fmt(&self.0, f)
     }
 }
 
 impl Display for Bf16Wrapper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.to_f32())
+        Display::fmt(&self.0, f)
     }
 }
 
@@ -173,6 +173,12 @@ impl ToPrimitive for Bf16Wrapper {
 
     fn to_f64(&self) -> Option<f64> {
         Some(self.0.to_f64())
+    }
+}
+
+impl AsPrimitive<f32> for Bf16Wrapper {
+    fn as_(self) -> f32 {
+        self.0.to_f32()
     }
 }
 

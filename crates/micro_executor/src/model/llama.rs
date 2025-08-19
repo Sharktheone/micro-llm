@@ -368,7 +368,6 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
 
 
 
-        let sin_b_axis = sin.insert_axis(Axis(0));
         let x = x.as_standard_layout();
         let cos = cos.as_standard_layout();
         let sin = sin.as_standard_layout();
@@ -379,8 +378,6 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
 
         let mut output = vec![T::zero(); x_view.len()];
 
-        let out_even = &x_even * &cos_b - &x_odd * &sin_b;
-        let out_odd = &x_even * &sin_b + &x_odd * &cos_b;
         let s = x.shape();
         let h = s[0];
         let t = s[1];
