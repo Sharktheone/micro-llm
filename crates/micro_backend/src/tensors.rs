@@ -31,3 +31,8 @@ pub struct Dim3<B: Backend> {
     dim: [usize; 3],
     _marker: std::marker::PhantomData<B>,
 }
+
+
+impl<B: Backend> Dim<B> for Dim1<B> {}
+impl<B: Backend> Dim<B> for Dim2<B> {}
+impl<B: Backend> Dim<B> for Dim3<B> {}
