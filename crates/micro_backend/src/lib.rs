@@ -1,4 +1,6 @@
+mod tensors;
 
+pub use tensors::*;
 
 use std::ops::{Add, Mul};
 
