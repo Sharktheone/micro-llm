@@ -16,3 +16,4 @@ num-traits = "0.2.19"
 libm = "0.2.15"
 
 micro_tokenizer = { path = "../micro_tokenizer", features = ["hf"] }
+micro_backend = { path = "../micro_backend" }

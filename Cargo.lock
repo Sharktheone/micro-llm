@@ -153,6 +153,7 @@ dependencies = [
  "half",
  "libm",
  "memmap2",
+ "micro_backend",
  "micro_tokenizer",
  "ndarray",
  "ndarray-rand",

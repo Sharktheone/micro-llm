@@ -2,6 +2,7 @@ use crate::load::{LoadResult, Loadable, load_array1, load_array2};
 use crate::nn::Layer;
 use ndarray::{Array2, ArrayView1, ArrayView2, LinalgScalar};
 use safetensors::SafeTensors;
+use micro_backend::{Backend, DType, LoadTensor2, RefTensor2, SupportsDType, Tensor, Tensor2};
 
 pub struct Linear<'a, T> {
     weight: ArrayView2<'a, T>,
@@ -54,4 +55,16 @@ impl<T: LinalgScalar> LinearNoBias<'_, T> {
     pub fn forward_view(&self, input: &ArrayView2<T>) -> Array2<T> {
         input.dot(&self.weight.t())
     }
+}
+
+
+pub struct LinearNoBiasB<'a, B: Backend + SupportsDType<T>, T: DType> {
+    weight: LoadTensor2<'a, B, T>,
+}
+
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LinearNoBiasB<'a, B, T> {
+    pub fn forward(&self, input: RefTensor2<'_, B, T>) -> Tensor2<'_, B, T> {
+        input.mul(&self.weight.t())
+    }
+
 }
