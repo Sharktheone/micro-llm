@@ -40,11 +40,11 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store<B>, D: Di
     fn to_owned<'b>(&self) -> B::Tensor<'b, T, B::OwnedStore, D>;
     fn as_ref(&self) -> B::Tensor<'a, T, B::RefStore, D>;
 
-    fn add<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
-    fn mul<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
+    fn add<'b, S2: Store<B>>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
+    fn mul<'b, S2: Store<B>>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
 
-    fn mul_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>) where Self: OwnedTensor<B, T, D>;
-    fn add_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>) where Self: OwnedTensor<B, T, D>;
+    fn mul_inplace<S2: Store<B>>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
+    fn add_inplace<S2: Store<B>>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
 
     fn map(&self, f: impl Fn(T) -> T) -> B::Tensor<'a, T, B::OwnedStore, D>;
     fn map_inplace(&mut self, f: impl Fn(T) -> T) where Self: OwnedTensor<B, T, D>;
