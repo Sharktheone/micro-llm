@@ -23,6 +23,12 @@ pub trait DType: Display + Debug + Copy {}
 pub trait Store<B: Backend> {}
 pub trait Dim<B: Backend> {}
 
+
+
+pub trait OwnedTensor<B: Backend, T: DType, D: Dim<B>> {}
+
+impl<B: Backend + SupportsDType<T>, T: DType, D: Dim<B>> OwnedTensor<B, T, D> for B::Tensor<'_, T, B::OwnedStore, D> {}
+
 pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store<B>, D: Dim<B>>: Sized + Debug + Clone {
     fn shape(&self) -> &[usize];
     fn data(&self) -> &[T];
@@ -33,9 +39,12 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store<B>, D: Di
 
     fn add<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
     fn mul<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
+
+    fn mul_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>) where Self: OwnedTensor<B, T, D>;
+    fn add_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>) where Self: OwnedTensor<B, T, D>;
 }
 
-pub trait OwnedTensor<'a, T: DType, B: Backend + SupportsDType<T>, D: Dim<B>>: Tensor<'a, T, B, B::OwnedStore, D> {
-    fn mul_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>);
-    fn add_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>);
-}
+// pub trait OwnedTensor<'a, T: DType, B: Backend + SupportsDType<T>, D: Dim<B>>: Tensor<'a, T, B, B::OwnedStore, D> {
+//     fn mul_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>);
+//     fn add_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>);
+// }
