@@ -43,6 +43,15 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store<B>, D: Di
 
     fn mul_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>) where Self: OwnedTensor<B, T, D>;
     fn add_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>) where Self: OwnedTensor<B, T, D>;
+
+    fn map(&self, f: impl Fn(T) -> T) -> B::Tensor<'a, T, B::OwnedStore, D>;
+    fn map_inplace(&mut self, f: impl Fn(T) -> T) where Self: OwnedTensor<B, T, D>;
+
+    fn map_threaded(&self, f: impl Fn(T) -> T + Send + Sync) -> B::Tensor<'a, T, B::OwnedStore, D>;
+    fn map_inplace_threaded(&mut self, f: impl Fn(T) -> T + Send + Sync) where Self: OwnedTensor<B, T, D>;
+
+    fn map_batched(&self, f: impl Fn(&[T], &mut [T]) + Send + Sync, batch_size: usize) -> B::Tensor<'a, T, B::OwnedStore, D>;
+    fn map_inplace_batched(&mut self, f: impl Fn(&mut [T]) + Send + Sync, batch_size: usize) where Self: OwnedTensor<B, T, D>;
 }
 
 // pub trait OwnedTensor<'a, T: DType, B: Backend + SupportsDType<T>, D: Dim<B>>: Tensor<'a, T, B, B::OwnedStore, D> {
