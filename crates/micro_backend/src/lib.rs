@@ -4,6 +4,7 @@ use std::fmt::{Debug, Display};
 pub use tensors::*;
 
 use std::ops::{Add, Mul};
+use num_traits::{Float, FromPrimitive, One, Zero};
 
 pub trait Backend: Sized {
     type RefStore: Store<Self>;
@@ -18,7 +19,7 @@ pub trait Backend: Sized {
 
 pub trait SupportsDType<D: DType>: Backend {}
 
-pub trait DType: Display + Debug + Copy {}
+pub trait DType: Display + Debug + Copy + Float + FromPrimitive + Zero + One {}
 
 pub trait Store<B: Backend> {}
 pub trait Dim<B: Backend> {}
