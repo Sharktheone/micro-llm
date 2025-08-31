@@ -38,6 +38,7 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store<B>, D: Di
 
     fn to_dtype<'b, U: DType>(&self) -> B::Tensor<'b, U, B::OwnedStore, D> where B: SupportsDType<U>;
     fn to_owned<'b>(&self) -> B::Tensor<'b, T, B::OwnedStore, D>;
+    fn as_ref(&self) -> B::Tensor<'a, T, B::RefStore, D>;
 
     fn add<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
     fn mul<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
