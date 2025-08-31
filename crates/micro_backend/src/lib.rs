@@ -34,3 +34,8 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store<B>, D: Di
     fn add<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
     fn mul<'b>(&self, other: &B::Tensor<'_, T, S, D>) -> B::Tensor<'b, T, B::OwnedStore, D>;
 }
+
+pub trait OwnedTensor<'a, T: DType, B: Backend + SupportsDType<T>, D: Dim<B>>: Tensor<'a, T, B, B::OwnedStore, D> {
+    fn mul_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>);
+    fn add_inplace(&mut self, other: &B::Tensor<'_, T, B::RefStore, D>);
+}
