@@ -19,7 +19,7 @@ pub trait Backend: Sized {
 
 pub trait SupportsDType<D: DType>: Backend {}
 
-pub trait DType: Display + Debug + Copy + Float + FromPrimitive + Zero + One {}
+pub trait DType: 'static + Display + Debug + Copy + Float + FromPrimitive + Zero + One + Send + Sync {}
 
 pub trait Store<B: Backend> {}
 pub trait Dim<B: Backend> {}
