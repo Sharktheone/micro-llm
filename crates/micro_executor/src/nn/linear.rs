@@ -58,6 +58,22 @@ impl<T: LinalgScalar> LinearNoBias<'_, T> {
 }
 
 
+pub struct LinearB<'a, B: Backend + SupportsDType<T>, T: DType> {
+    weight: LoadTensor2<'a, B, T>,
+    bias: LoadTensor2<'a, B, T>,
+}
+
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LinearB<'a, B, T> {
+    pub fn forward(&self, input: RefTensor2<'_, B, T>) -> Tensor2<'_, B, T> {
+        input.mul(&self.weight.t()).add(&self.bias)
+    }
+
+    pub fn forward_inplace(&self, input: &mut Tensor2<'_, B, T>) {
+        input.mul_inplace(&self.weight.t());
+        input.add_inplace(&self.bias);
+    }
+}
+
 pub struct LinearNoBiasB<'a, B: Backend + SupportsDType<T>, T: DType> {
     weight: LoadTensor2<'a, B, T>,
 }
