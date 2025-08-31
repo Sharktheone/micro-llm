@@ -67,4 +67,7 @@ impl<'a, B: Backend + SupportsDType<T>, T: DType> LinearNoBiasB<'a, B, T> {
         input.mul(&self.weight.t())
     }
 
+    pub fn forward_inplace(&self, input: &mut Tensor2<'_, B, T>) {
+        input.mul_inplace(&self.weight.t());
+    }
 }
