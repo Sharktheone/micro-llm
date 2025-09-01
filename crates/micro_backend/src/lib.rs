@@ -22,7 +22,10 @@ pub trait SupportsDType<D: DType>: Backend {}
 pub trait DType: 'static + Display + Debug + Copy + Float + FromPrimitive + Zero + One + Send + Sync {}
 
 pub trait Store<B: Backend> {}
-pub trait Dim<B: Backend> {}
+pub trait Dim<B: Backend> {
+    type Larger: Dim<B>;
+    type Smaller: Dim<B>;
+}
 
 
 
