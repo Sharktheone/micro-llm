@@ -144,6 +144,7 @@ version = "0.1.0"
 name = "micro_backend"
 version = "0.1.0"
 dependencies = [
+ "half",
  "num-traits",
 ]
 
@@ -165,6 +166,7 @@ dependencies = [
  "libm",
  "memmap2",
  "micro_backend",
+ "micro_backend_cpu",
  "micro_tokenizer",
  "ndarray",
  "ndarray-rand",

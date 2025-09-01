@@ -2,7 +2,9 @@ mod store;
 mod tensor;
 
 use half::f16;
-use micro_backend::{Backend, DType, Dim, Store, SupportsDType};
+use micro_backend::{Backend, DType, Dim, Store, Supports, SupportsDType};
+use crate::store::{CpuLoadStore, CpuOwnedStore, CpuRefStore, CpuSharedStore, CpuStore};
+use crate::tensor::CpuTensor;
 
 pub struct CpuBackend;
 
@@ -11,10 +13,9 @@ impl Backend for CpuBackend {
     type OwnedStore = CpuOwnedStore;
     type LoadStore = CpuLoadStore;
     type SharedStore = CpuSharedStore;
-    type Tensor<'a, T: DType, S: Store<Self>, D: Dim<Self>>
-    where
-        Self: SupportsDType<T>
-    = CpuTensor<'a, T, S, D>;
+    type Tensor<'a, T: DType, S: CpuStore, D: Dim>
+    = CpuTensor<'a, T, S, D>
+    where Self: Supports<T, S, D>;
 }
 
 
