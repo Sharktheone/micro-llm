@@ -33,15 +33,15 @@ pub struct Dim3<B: Backend> {
 }
 
 
-impl<B: Backend> Dim<B> for Dim1<B> {
+impl<B: Backend> Dim for Dim1<B> {
     type Larger = Dim2<B>;
     type Smaller = Dim1<B>;
 }
-impl<B: Backend> Dim<B> for Dim2<B> {
+impl<B: Backend> Dim for Dim2<B> {
     type Larger = Dim3<B>;
     type Smaller = Dim1<B>;
 }
-impl<B: Backend> Dim<B> for Dim3<B> {
+impl<B: Backend> Dim for Dim3<B> {
     type Larger = Dim3<B>;
     type Smaller = Dim2<B>;
 }
