@@ -148,6 +148,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "micro_backend_cpu"
+version = "0.1.0"
+dependencies = [
+ "half",
+ "micro_backend",
+]
+
+[[package]]
 name = "micro_executor"
 version = "0.1.0"
 dependencies = [
