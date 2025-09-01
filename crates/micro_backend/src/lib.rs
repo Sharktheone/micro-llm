@@ -5,6 +5,7 @@ use std::fmt::{Debug, Display};
 pub use tensors::*;
 
 use std::ops::{Add, Mul};
+use half::f16;
 use num_traits::{Float, FromPrimitive, One, Zero};
 
 pub trait Backend: Sized + SupportsStore<Self::RefStore> + SupportsStore<Self::OwnedStore> + SupportsStore<Self::LoadStore> + SupportsStore<Self::SharedStore> {
@@ -28,6 +29,10 @@ impl <B: SupportsDType<T> + SupportsStore<S> + SupportsDim<D>, T: DType, S: Stor
 
 
 pub trait DType: 'static + Display + Debug + Copy + Float + FromPrimitive + Zero + One + Send + Sync {}
+
+impl DType for f32 {}
+impl DType for f64 {}
+impl DType for f16 {}
 
 pub trait Store {}
 pub trait Dim {
