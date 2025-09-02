@@ -8,7 +8,7 @@ use std::ops::{Add, Mul};
 use half::f16;
 use num_traits::{Float, FromPrimitive, One, Zero};
 
-pub trait Backend: Sized + SupportsStore<Self::RefStore> + SupportsStore<Self::OwnedStore> + SupportsStore<Self::LoadStore> + SupportsStore<Self::SharedStore> {
+pub trait Backend: Sized {
     type RefStore: Store;
     type OwnedStore: Store;
     type LoadStore: Store;
@@ -23,9 +23,11 @@ pub trait SupportsStore<S: Store> {}
 pub trait SupportsDim<D: Dim> {}
 
 
-pub trait Supports<T: DType, S: Store, D: Dim>: SupportsDType<T> + SupportsStore<S> + SupportsDim<D> {}
+pub trait Supports<T: DType, S: Store, D: Dim>: Backend {
+    type _Tensor<'a>: Tensor<'a, T, Self, S, D> where Self: Sized;
+}
 
-impl <B: SupportsDType<T> + SupportsStore<S> + SupportsDim<D>, T: DType, S: Store, D: Dim> Supports<T, S, D> for B {}
+// impl <B: SupportsDType<T> + SupportsStore<S> + SupportsDim<D>, T: DType, S: Store, D: Dim> Supports<T, S, D> for B {}
 
 
 pub trait DType: 'static + Display + Debug + Copy + Float + FromPrimitive + Zero + One + Send + Sync {}
