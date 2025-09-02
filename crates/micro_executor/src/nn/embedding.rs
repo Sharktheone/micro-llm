@@ -1,5 +1,6 @@
-use crate::load::{LoadResult, Loadable, load_array2};
+use crate::load::{LoadResult, Loadable, load_array2, DType};
 use ndarray::{Array2, ArrayView2, Axis, s};
+use micro_backend::{Backend, LoadTensor2, RefTensor2, Tensor, Tensor2};
 
 pub struct Embedding<'a, T> {
     weight: ArrayView2<'a, T>,
@@ -24,5 +25,20 @@ impl<'a, T: Clone> Embedding<'a, T> {
 impl<'a, T> Embedding<'a, T> {
     pub fn position_forward(&self, input: usize) -> ArrayView2<'_, T> {
         self.weight.slice(s![..input, ..])
+    }
+}
+
+
+pub struct Embedding2<'a, B: Backend, T: DType> {
+    weight: LoadTensor2<'a, B, T>,
+}
+
+impl<'a, B: Backend, T: DType> Embedding2<'a, B, T> {
+    pub fn forward(&self, input: &[usize]) -> Tensor2<'a, B, T> {
+        self.weight.select(input)
+    }
+
+    pub fn position_forward(&self, input: usize) -> RefTensor2<'a, B, T> {
+        self.weight.select_from_start(input)
     }
 }
