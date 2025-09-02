@@ -65,4 +65,8 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     fn select_from_start(&self, count: usize) -> B::Tensor<'a, T, RefStore, D>;
 
     fn slice(&self, ranges: &[std::ops::Range<usize>]) -> B::Tensor<'a, T, OwnedStore, D>;
+    
+    fn from_slice(data: &'a [T], shape: impl Into<D>) -> B::Tensor<'a, T, RefStore, D>;
+    
+    fn from_vec(data: Vec<T>, shape: impl Into<D>) -> B::Tensor<'a, T, OwnedStore, D>;
 }
