@@ -1,41 +1,30 @@
 use std::ops::Deref;
-use micro_backend::{Store, SupportsStore};
-use crate::CpuBackend;
+use micro_backend::{LoadStore, OwnedStore, RefStore, SharedStore, Store};
 
-pub struct CpuRefStore;
-pub struct CpuOwnedStore;
-pub struct CpuLoadStore;
-
-pub struct CpuSharedStore;
-
-
-
-pub trait CpuStore: Store {
-    type DataStorage<'a, T: 'a>: Deref<Target=[T]>;
+pub trait CpuStore {
+    type DataStorage<'a, T: 'a>: AsRef<[T]>;
 }
 
-impl<T: CpuStore> SupportsStore<T> for CpuBackend {}
 
-impl CpuStore for CpuRefStore {
+
+impl<T: Store> CpuStore for T
+where
+    T: Store,
+{
+    default type DataStorage<'a, U: 'a> = &'a [U];
+}
+
+impl CpuStore for RefStore {
     type DataStorage<'a, U: 'a> = &'a [U];
-
 }
-
-impl Store for CpuRefStore {}
-
-impl CpuStore for CpuOwnedStore {
+impl CpuStore for OwnedStore {
     type DataStorage<'a, U: 'a> = Vec<U>;
 }
 
-impl Store for CpuOwnedStore {}
-
-impl CpuStore for CpuLoadStore {
+impl CpuStore for LoadStore {
     type DataStorage<'a, U: 'a> = &'a [U];
 }
 
-impl Store for CpuLoadStore {}
-impl CpuStore for CpuSharedStore {
+impl CpuStore for SharedStore {
     type DataStorage<'a, U: 'a> = &'a [U];
 }
-
-impl Store for CpuSharedStore {}

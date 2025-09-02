@@ -1,8 +1,9 @@
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::ops::Range;
-use micro_backend::{DType, Dim, OwnedTensor, Store, Supports, SupportsDType, SupportsStore, Tensor};
+use micro_backend::{DType, Dim, Store, SupportsDType, Tensor, RefStore, OwnedStore, OwnedTensor, Backend};
 use crate::CpuBackend;
-use crate::store::{CpuOwnedStore, CpuRefStore, CpuStore};
+use crate::store::{CpuStore};
 
 pub struct CpuTensor<'a, T: DType, S: CpuStore, D: Dim> {
     data: S::DataStorage<'a, T>,
@@ -23,11 +24,7 @@ impl<'a, T: DType, S: CpuStore, D: Dim> Clone for CpuTensor<'a, T, S, D> {
 }
 
 
-impl<'a, T: DType, S: CpuStore, D: Dim> Tensor<'a, T, CpuBackend, S, D> for CpuTensor<'a, T, S, D>
-where
-    CpuBackend: Supports<T, S, D>,
-    S: CpuStore,
-{
+impl<'a, T: DType, S: Store + CpuStore, D: Dim> Tensor<'a, T, CpuBackend, S, D> for CpuTensor<'a, T, S, D> {
     fn shape(&self) -> &[usize] {
         todo!()
     }
@@ -36,60 +33,48 @@ where
         todo!()
     }
 
-    fn t(&self) -> CpuTensor<'a, T, CpuRefStore, D> {
+    fn t(&self) -> <CpuBackend as Backend>::Tensor<'a, T, RefStore, D> {
         todo!()
     }
 
-    fn to_dtype<'b, U: DType>(&self) -> CpuTensor<'b, U, CpuOwnedStore, D>
+    fn to_dtype<'b, U: DType>(&self) -> <CpuBackend as Backend>::Tensor<'b, U, OwnedStore, D>
     where
         CpuBackend: SupportsDType<U>
     {
         todo!()
     }
 
-    fn to_owned<'b>(&self) -> CpuTensor<'b, T, CpuOwnedStore, D> {
+    fn to_owned<'b>(&self) -> <CpuBackend as Backend>::Tensor<'b, T, OwnedStore, D> {
         todo!()
     }
 
-    fn as_ref(&self) -> CpuTensor<'a, T, CpuRefStore, D> {
+    fn as_ref(&self) -> <CpuBackend as Backend>::Tensor<'a, T, RefStore, D> {
         todo!()
     }
 
-    fn add<'b, S2: Store>(&self, other: &CpuTensor<'_, T, S2, D>) -> CpuTensor<'b, T, CpuOwnedStore, D>
+    fn add<'b, S2: Store>(&self, other: &<CpuBackend as Backend>::Tensor<'_, T, S2, D>) -> <CpuBackend as Backend>::Tensor<'b, T, OwnedStore, D> {
+        todo!()
+    }
+
+    fn mul<'b, S2: Store>(&self, other: &<CpuBackend as Backend>::Tensor<'_, T, S2, D>) -> <CpuBackend as Backend>::Tensor<'b, T, OwnedStore, D> {
+        todo!()
+    }
+
+    fn mul_inplace<S2: Store>(&mut self, other: &<CpuBackend as Backend>::Tensor<'_, T, S2, D>)
     where
-        CpuBackend: SupportsStore<S2>,
-        S2: CpuStore
+        Self: OwnedTensor<CpuBackend, T, D>
     {
         todo!()
     }
 
-    fn mul<'b, S2: Store>(&self, other: &CpuTensor<'_, T, S2, D>) -> CpuTensor<'b, T, CpuOwnedStore, D>
+    fn add_inplace<S2: Store>(&mut self, other: &<CpuBackend as Backend>::Tensor<'_, T, S2, D>)
     where
-        CpuBackend: SupportsStore<S2>,
-        S2: CpuStore
+        Self: OwnedTensor<CpuBackend, T, D>
     {
         todo!()
     }
 
-    fn mul_inplace<S2: Store>(&mut self, other: &CpuTensor<'_, T, S2, D>)
-    where
-        Self: OwnedTensor<CpuBackend, T, D>,
-        CpuBackend: SupportsStore<S2>,
-        S2: CpuStore
-    {
-        todo!()
-    }
-
-    fn add_inplace<S2: Store>(&mut self, other: &CpuTensor<'_, T, S2, D>)
-    where
-        Self: OwnedTensor<CpuBackend, T, D>,
-        CpuBackend: SupportsStore<S2>,
-        S2: CpuStore
-    {
-        todo!()
-    }
-
-    fn map(&self, f: impl Fn(T) -> T) -> CpuTensor<'a, T, CpuOwnedStore, D> {
+    fn map(&self, f: impl Fn(T) -> T) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
         todo!()
     }
 
@@ -100,7 +85,7 @@ where
         todo!()
     }
 
-    fn map_threaded(&self, f: impl Fn(T) -> T + Send + Sync) -> CpuTensor<'a, T, CpuOwnedStore, D> {
+    fn map_threaded(&self, f: impl Fn(T) -> T + Send + Sync) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
         todo!()
     }
 
@@ -111,7 +96,7 @@ where
         todo!()
     }
 
-    fn map_batched(&self, f: impl Fn(&[T], &mut [T]) + Send + Sync, batch_size: usize) -> CpuTensor<'a, T, CpuOwnedStore, D> {
+    fn map_batched(&self, f: impl Fn(&[T], &mut [T]) + Send + Sync, batch_size: usize) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
         todo!()
     }
 
@@ -122,15 +107,15 @@ where
         todo!()
     }
 
-    fn select(&self, indices: &[usize]) -> CpuTensor<'a, T, CpuOwnedStore, D> {
+    fn select(&self, indices: &[usize]) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
         todo!()
     }
 
-    fn select_from_start(&self, count: usize) -> CpuTensor<'a, T, CpuRefStore, D> {
+    fn select_from_start(&self, count: usize) -> <CpuBackend as Backend>::Tensor<'a, T, RefStore, D> {
         todo!()
     }
 
-    fn slice(&self, ranges: &[Range<usize>]) -> CpuTensor<'a, T, CpuOwnedStore, D> {
+    fn slice(&self, ranges: &[Range<usize>]) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
         todo!()
     }
 }
