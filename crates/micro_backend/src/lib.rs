@@ -54,8 +54,17 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     fn add_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
     fn sub_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
     fn mul_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
-    fn add_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
     fn div_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
+    
+    fn div_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
+    fn mul_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
+    fn add_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
+    fn sub_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
+    
+    fn div_scalar_inplace(&mut self, scalar: T) where Self: OwnedTensor<B, T, D>;
+    fn mul_scalar_inplace(&mut self, scalar: T) where Self: OwnedTensor<B, T, D>;
+    fn add_scalar_inplace(&mut self, scalar: T) where Self: OwnedTensor<B, T, D>;
+    fn sub_scalar_inplace(&mut self, scalar: T) where Self: OwnedTensor<B, T, D>;
     
 
     fn map(&self, f: impl Fn(T) -> T) -> B::Tensor<'a, T, OwnedStore, D>;
