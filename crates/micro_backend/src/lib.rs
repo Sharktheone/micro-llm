@@ -7,6 +7,7 @@ use std::fmt::{Debug, Display};
 pub use tensors::*;
 
 use std::ops::{Add, Mul};
+use std::path::Path;
 use half::f16;
 use num_traits::{Float, FromPrimitive, One, Zero};
 
@@ -14,6 +15,7 @@ pub use dim::*;
 pub use store::*;
 
 pub trait Backend: Sized {
+    type Loader: ModelLoader<Self>;
     type Tensor<'a, T: DType, S: Store, D: Dim>: Tensor<'a, T, Self, S, D> where Self: SupportsDType<T>;
 }
 
@@ -28,6 +30,16 @@ impl DType for f32 {}
 impl DType for f64 {}
 impl DType for f16 {}
 
+
+
+pub trait ModelLoader<B: Backend>: Sized {
+    fn load_model(backend: &mut B, files: &[impl AsRef<Path>]) -> anyhow::Result<Self>;
+
+    fn to_dtype<T: DType>(self) -> Self where B: SupportsDType<T>;
+
+    #[allow(clippy::needless_lifetimes)]
+    fn load_tensor<'a, T: DType, D: Dim>(&'a self, name: &str) -> Option<B::Tensor<'a, T, LoadStore, D>> where B: SupportsDType<T>;
+}
 
 
 pub trait OwnedTensor<B: Backend, T: DType, D: Dim> {}
