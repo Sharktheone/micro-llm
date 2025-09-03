@@ -75,6 +75,10 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
 
     fn map_batched(&self, f: impl Fn(&[T], &mut [T]) + Send + Sync, batch_size: usize) -> B::Tensor<'a, T, OwnedStore, D>;
     fn map_inplace_batched(&mut self, f: impl Fn(&mut [T]) + Send + Sync, batch_size: usize) where Self: OwnedTensor<B, T, D>;
+    
+    fn map_axis(&self, axis: usize, f: impl Fn(RefTensor1<B, T>) -> T) -> B::Tensor<'a, T, OwnedStore, D::Smaller>;
+    fn map_axis_threaded(&self, axis: usize, f: impl Fn(RefTensor1<B, T>) -> T + Send + Sync) -> B::Tensor<'a, T, OwnedStore, D::Smaller>;
+    
 
     fn select(&self, indices: &[usize]) -> B::Tensor<'a, T, OwnedStore, D>;
 
