@@ -46,7 +46,9 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     fn as_ref(&self) -> B::Tensor<'a, T, RefStore, D>;
 
     fn add<'b, S2: Store>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, OwnedStore, D>;
+    fn sub<'b, S2: Store>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, OwnedStore, D>;
     fn mul<'b, S2: Store>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, OwnedStore, D>;
+    fn div<'b, S2: Store>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, OwnedStore, D>;
 
     fn mul_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
     fn add_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
