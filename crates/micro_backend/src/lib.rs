@@ -50,8 +50,13 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     fn mul<'b, S2: Store>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, OwnedStore, D>;
     fn div<'b, S2: Store>(&self, other: &B::Tensor<'_, T, S2, D>) -> B::Tensor<'b, T, OwnedStore, D>;
 
+
+    fn add_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
+    fn sub_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
     fn mul_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
     fn add_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
+    fn div_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>) where Self: OwnedTensor<B, T, D>;
+    
 
     fn map(&self, f: impl Fn(T) -> T) -> B::Tensor<'a, T, OwnedStore, D>;
     fn map_inplace(&mut self, f: impl Fn(T) -> T) where Self: OwnedTensor<B, T, D>;
