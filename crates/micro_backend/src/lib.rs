@@ -2,6 +2,7 @@
 mod tensors;
 mod store;
 mod dim;
+pub mod load;
 
 use std::fmt::{Debug, Display};
 pub use tensors::*;
@@ -13,6 +14,7 @@ use num_traits::{Float, FromPrimitive, One, Zero};
 
 pub use dim::*;
 pub use store::*;
+use crate::load::LoadResult;
 
 pub trait Backend: Sized {
     type Loader: ModelLoader<Self>;
@@ -38,7 +40,7 @@ pub trait ModelLoader<B: Backend>: Sized {
     fn to_dtype<T: DType>(self) -> Self where B: SupportsDType<T>;
 
     #[allow(clippy::needless_lifetimes)]
-    fn load_tensor<'a, T: DType, D: Dim>(&'a self, name: &str) -> Option<B::Tensor<'a, T, LoadStore, D>> where B: SupportsDType<T>;
+    fn load_tensor<'a, T: DType, D: Dim>(&'a self, name: &str) -> LoadResult<B::Tensor<'a, T, LoadStore, D>> where B: SupportsDType<T>;
 }
 
 

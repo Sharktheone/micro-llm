@@ -7,3 +7,4 @@ edition = "2024"
 num-traits = "0.2.19"
 half = { version = "2.6.0", features = ["bytemuck", "num-traits"] }
 anyhow = "1.0.99"
+thiserror = "2.0.16"

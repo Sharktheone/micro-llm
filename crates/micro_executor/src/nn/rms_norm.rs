@@ -2,7 +2,8 @@ use std::fmt::{Debug, Display};
 use ndarray::{Array2, ArrayView1, ScalarOperand, Axis};
 use num_traits::{AsPrimitive, Float, FromPrimitive, Zero};
 use rayon::slice::{ParallelSlice, ParallelSliceMut};
-use micro_backend::{Backend, DType, Dim, LoadTensor1, RefTensor2, Tensor, Tensor2};
+use micro_backend::{Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, Tensor, Tensor2};
+use micro_backend::load::LoadResult;
 use crate::load::{load_array1, Loadable};
 
 pub struct RmsNorm<'a, T> {
@@ -76,6 +77,12 @@ pub struct RmsNorm2<'a, B: Backend, T: DType> {
 }
 
 impl<'a,  B: Backend, T: DType> RmsNorm2<'a, B, T> {
+    pub fn load(loader: &B::Loader, prefix: &str, eps: f32) -> LoadResult<Self> {
+        let weight = loader.load_tensor(&format!("{prefix}weight"))?;
+
+        Ok(RmsNorm2 { weight, eps })
+    }
+
     pub fn forward(&self, x: &RefTensor2<'_, B, T>) -> anyhow::Result<Tensor2<'_, B, T>> {
         let [rows, cols] = x.dim().pattern();
         
