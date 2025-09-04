@@ -1,14 +1,14 @@
 use bytemuck::{AnyBitPattern, Zeroable};
 use half::f16;
 use ndarray::ScalarOperand;
+use ndarray_rand::rand::Rng;
+use ndarray_rand::rand_distr::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use num_traits::{AsPrimitive, Float, FromPrimitive, Num, NumCast, One, ToPrimitive, Zero};
 use safetensors::Dtype;
 use std::fmt::{Debug, Display};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
-use ndarray_rand::rand::Rng;
-use ndarray_rand::rand_distr::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 #[repr(transparent)]
@@ -334,9 +334,7 @@ impl Float for F16Wrapper {
     }
 
     fn abs_sub(self, other: Self) -> Self {
-        Self(f16::from_f32(
-            (self.0.to_f32() - other.0.to_f32()).max(0.0),
-        ))
+        Self(f16::from_f32((self.0.to_f32() - other.0.to_f32()).max(0.0)))
     }
 
     fn cbrt(self) -> Self {
@@ -505,38 +503,3 @@ impl crate::load::DType for F16Wrapper {
 unsafe impl Zeroable for F16Wrapper {}
 
 unsafe impl AnyBitPattern for F16Wrapper {}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

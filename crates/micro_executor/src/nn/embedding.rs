@@ -1,6 +1,6 @@
-use crate::load::{LoadResult, Loadable, load_array2, DType};
+use crate::load::{DType, LoadResult, Loadable, load_array2};
+use micro_backend::{Backend, LoadTensor2, ModelLoader, RefTensor2, Tensor, Tensor2, load};
 use ndarray::{Array2, ArrayView2, Axis, s};
-use micro_backend::{load, Backend, LoadTensor2, ModelLoader, RefTensor2, Tensor, Tensor2};
 
 pub struct Embedding<'a, T> {
     weight: ArrayView2<'a, T>,
@@ -28,19 +28,17 @@ impl<'a, T> Embedding<'a, T> {
     }
 }
 
-
 pub struct Embedding2<'a, B: Backend, T: DType> {
     weight: LoadTensor2<'a, B, T>,
 }
 
 impl<'a, B: Backend, T: DType> Embedding2<'a, B, T> {
     pub fn load(loader: &B::Loader, prefix: &str) -> load::LoadResult<Self> {
-        let weight = loader
-            .load_tensor(&format!("{prefix}weight"))?;
-        
+        let weight = loader.load_tensor(&format!("{prefix}weight"))?;
+
         Ok(Embedding2 { weight })
     }
-    
+
     pub fn forward(&self, input: &[usize]) -> Tensor2<'a, B, T> {
         self.weight.select(input)
     }

@@ -1,4 +1,3 @@
-
 pub trait Store: private::Sealed {}
 
 pub struct RefStore;
@@ -10,7 +9,6 @@ impl Store for RefStore {}
 impl Store for OwnedStore {}
 impl Store for LoadStore {}
 impl Store for SharedStore {}
-
 
 impl private::Sealed for RefStore {}
 impl private::Sealed for OwnedStore {}

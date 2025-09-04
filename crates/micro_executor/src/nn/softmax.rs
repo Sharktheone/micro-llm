@@ -1,6 +1,8 @@
+use micro_backend::{
+    Backend, DType, RefTensor1, RefTensor2, RefTensor3, Tensor, Tensor1, Tensor2, Tensor3,
+};
 use ndarray::{LinalgScalar, ScalarOperand};
 use num_traits::Float;
-use micro_backend::{Backend, DType, RefTensor1, RefTensor2, RefTensor3, Tensor, Tensor1, Tensor2, Tensor3};
 
 pub fn softmax3<T: LinalgScalar + Float>(
     input: ndarray::Array3<T>,
@@ -39,7 +41,6 @@ pub fn softmax1<T: LinalgScalar + Float + ScalarOperand>(
     let sum = exp.sum();
     Ok(exp / sum)
 }
-
 
 pub fn softmax1_<B: Backend, T: DType>(input: &RefTensor1<B, T>) -> RefTensor1<B, T> {
     let max = input.data().iter().cloned().fold(T::min_value(), T::max);

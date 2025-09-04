@@ -1,14 +1,14 @@
 use bytemuck::{AnyBitPattern, Zeroable};
 use half::bf16;
 use ndarray::ScalarOperand;
+use ndarray_rand::rand::Rng;
+use ndarray_rand::rand_distr::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use num_traits::{AsPrimitive, Float, FromPrimitive, Num, NumCast, One, ToPrimitive, Zero};
 use safetensors::Dtype;
 use std::fmt::{Debug, Display};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
-use ndarray_rand::rand::Rng;
-use ndarray_rand::rand_distr::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 #[repr(transparent)]
@@ -505,38 +505,3 @@ impl crate::load::DType for Bf16Wrapper {
 unsafe impl Zeroable for Bf16Wrapper {}
 
 unsafe impl AnyBitPattern for Bf16Wrapper {}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,12 +1,12 @@
-use std::f32::consts::PI;
-use std::fmt::{Debug, Display};
 use crate::load::Loadable;
-use crate::nn::{multinomial, silu, softmax1, softmax3, Embedding, LinearNoBias, RmsNorm};
+use crate::nn::{Embedding, LinearNoBias, RmsNorm, multinomial, silu, softmax1, softmax3};
 use ndarray::{
-    concatenate, s, Array1, Array2, Array3, ArrayView3, Axis, LinalgScalar, ScalarOperand,
+    Array1, Array2, Array3, ArrayView3, Axis, LinalgScalar, ScalarOperand, concatenate, s,
 };
 use ndarray_rand::rand_distr::uniform::SampleUniform;
 use num_traits::{AsPrimitive, Float, FloatConst, FromPrimitive, One, Zero};
+use std::f32::consts::PI;
+use std::fmt::{Debug, Display};
 use std::slice;
 
 pub struct LlamaCache<T> {
@@ -21,13 +21,12 @@ impl<T: Copy + Float + FromPrimitive + 'static> LlamaCache<T> {
 
         let rope_scaling = &config.rope_scaling;
 
-
         let orig_max_pos_emb = T::from_usize(rope_scaling.original_max_pos_emb).unwrap();
 
-        let low_freq_wavelen = rope_scaling.original_max_pos_emb as f32
-            / rope_scaling.low_freq_factor;
-        let high_freq_wavelen = rope_scaling.original_max_pos_emb as f32
-            / rope_scaling.high_freq_factor;
+        let low_freq_wavelen =
+            rope_scaling.original_max_pos_emb as f32 / rope_scaling.low_freq_factor;
+        let high_freq_wavelen =
+            rope_scaling.original_max_pos_emb as f32 / rope_scaling.high_freq_factor;
 
         let theta = calculate_default_inv_freq(config)
             .into_iter()
@@ -38,23 +37,21 @@ impl<T: Copy + Float + FromPrimitive + 'static> LlamaCache<T> {
                 } else if wavelen > low_freq_wavelen {
                     freq / rope_scaling.factor
                 } else {
-                    let smooth = (rope_scaling.original_max_pos_emb as f32
-                        / wavelen
+                    let smooth = (rope_scaling.original_max_pos_emb as f32 / wavelen
                         - rope_scaling.low_freq_factor)
                         / (rope_scaling.high_freq_factor - rope_scaling.low_freq_factor);
                     (1. - smooth) * freq / rope_scaling.factor + smooth * freq
                 }
             })
-            .map(
-                |freq| T::from_f32(freq).unwrap()
-            )
+            .map(|freq| T::from_f32(freq).unwrap())
             .collect::<Vec<_>>();
 
         let theta = Array1::from_vec(theta);
 
         let mut idx_theta = Array1::from_iter(0..config.max_pos_emb)
             .mapv(|i| T::from_usize(i).unwrap())
-            .into_shape_with_order((config.max_pos_emb, 1)).unwrap();
+            .into_shape_with_order((config.max_pos_emb, 1))
+            .unwrap();
 
         let theta_view = theta.to_shape((1, theta.len())).unwrap();
 
@@ -82,7 +79,6 @@ fn calculate_default_inv_freq(config: &LlamaConfig) -> Vec<f32> {
         .collect()
 }
 
-
 pub struct LlamaConfig {
     num_blocks: usize,
     num_heads: usize,
@@ -108,7 +104,18 @@ pub struct LlamaModel<'a, T> {
     lm_head: LinearNoBias<'a, T>,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Debug + Display + AsPrimitive<f32>> LlamaModel<'_, T> {
+impl<
+    T: LinalgScalar
+        + Clone
+        + Float
+        + Zero
+        + FromPrimitive
+        + ScalarOperand
+        + Debug
+        + Display
+        + AsPrimitive<f32>,
+> LlamaModel<'_, T>
+{
     pub fn forward(
         &self,
         x: &[usize],
@@ -213,7 +220,18 @@ pub struct LlamaBlock<'a, T> {
     ln_2: RmsNorm<'a, T>,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Display + Debug + AsPrimitive<f32>> LlamaBlock<'_, T> {
+impl<
+    T: LinalgScalar
+        + Clone
+        + Float
+        + Zero
+        + FromPrimitive
+        + ScalarOperand
+        + Display
+        + Debug
+        + AsPrimitive<f32>,
+> LlamaBlock<'_, T>
+{
     pub fn forward(
         &self,
         x: &Array2<T>,
@@ -251,7 +269,7 @@ impl<'a, T: Loadable> LlamaBlock<'a, T> {
         let ln_2 = RmsNorm::from_safe_tensors(
             model,
             &format!("{}post_attention_layernorm.", prefix),
-            config.eps
+            config.eps,
         )?;
 
         Ok(LlamaBlock {
@@ -274,7 +292,9 @@ pub struct LlamaAttention<'a, T> {
     max_pos_emb: usize,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Display> LlamaAttention<'_, T> {
+impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Display>
+    LlamaAttention<'_, T>
+{
     pub fn forward(
         &self,
         x: &Array2<T>,
@@ -366,13 +386,11 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
         let cos = cache.cos.slice(s![index_pos..index_pos + seq_len, ..]);
         let sin = cache.sin.slice(s![index_pos..index_pos + seq_len, ..]);
 
-
-
         let x = x.as_standard_layout();
         let cos = cos.as_standard_layout();
         let sin = sin.as_standard_layout();
 
-        let x_view = x.as_slice().unwrap();;
+        let x_view = x.as_slice().unwrap();
         let cos = cos.as_slice().unwrap();
         let sin = sin.as_slice().unwrap();
 
@@ -383,8 +401,9 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
         let t = s[1];
         let d = s[2];
 
-        x_view.chunks(t*d)
-            .zip(output.chunks_mut(t*d))
+        x_view
+            .chunks(t * d)
+            .zip(output.chunks_mut(t * d))
             .enumerate()
             .for_each(|(bh_i, (src, dst))| {
                 for i_t in 0..t {
@@ -412,11 +431,7 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
 
             let a = concatenate(Axis(0), &vec![x.view(); n_rep])?;
 
-            a.into_shape_with_order((
-                n_kv_head * n_rep,
-                seq_len,
-                head_dim,
-            ))?
+            a.into_shape_with_order((n_kv_head * n_rep, seq_len, head_dim))?
         })
     }
 }
@@ -431,7 +446,6 @@ impl<'a, T: Loadable> LlamaAttention<'a, T> {
         let k_proj = LinearNoBias::from_safe_tensors(model, &format!("{}k_proj.", prefix))?;
         let v_proj = LinearNoBias::from_safe_tensors(model, &format!("{}v_proj.", prefix))?;
         let o_proj = LinearNoBias::from_safe_tensors(model, &format!("{}o_proj.", prefix))?;
-
 
         let head_dim = conf.hidden_size / conf.num_heads;
 
@@ -462,8 +476,6 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive> LlamaMlp<'_, T> {
         let x = self.c_fc2.forward(&input);
 
         let x = residual * x;
-
-
 
         let x = self.c_proj.forward(&x);
 
@@ -504,9 +516,9 @@ fn tril<T: LinalgScalar + Float + ScalarOperand>(input: ArrayView3<T>) -> ndarra
 
 #[cfg(test)]
 mod test {
-    use half::bf16;
-    use crate::bf16_wrapper::Bf16Wrapper;
     use super::*;
+    use crate::bf16_wrapper::Bf16Wrapper;
+    use half::bf16;
 
     const MODEL_LOCATION: &str =
         "/run/media/shark/datagrave/ai-modles/huggingface/llama-3.2-1B/model.safetensors";
@@ -535,10 +547,8 @@ mod test {
                 factor: 32.,
                 high_freq_factor: 4.,
                 low_freq_factor: 1.,
-                original_max_pos_emb: 8192
-
-            }
-
+                original_max_pos_emb: 8192,
+            },
         };
 
         let model = LlamaModel::<Bf16Wrapper>::from_safe_tensors(&model, "", &config).unwrap();
@@ -564,14 +574,7 @@ mod test {
                 print!("{decoded}");
             }
 
-
-
             input.push(token);
         }
-
-
-
-
-
     }
 }

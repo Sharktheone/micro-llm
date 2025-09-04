@@ -16,7 +16,7 @@ impl<'a, T: Loadable> LayerNorm<'a, T> {
         let bias = load_array1(model, &format!("{}bias", prefix))?;
         let eps = T::from_f32(1e-5).expect("failed to convert to float");
 
-        Ok(LayerNorm { weight, bias,  eps })
+        Ok(LayerNorm { weight, bias, eps })
     }
 }
 

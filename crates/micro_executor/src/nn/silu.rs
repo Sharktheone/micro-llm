@@ -1,5 +1,5 @@
-use num_traits::{Float, FromPrimitive, One};
 use micro_backend::{Backend, DType, RefTensor2, SupportsDType, Tensor, Tensor2};
+use num_traits::{Float, FromPrimitive, One};
 
 pub fn silu<T: Float + FromPrimitive + One>(mut x: ndarray::Array2<T>) -> ndarray::Array2<T> {
     let one = T::one();

@@ -1,11 +1,9 @@
-use std::ops::Deref;
 use micro_backend::{LoadStore, OwnedStore, RefStore, SharedStore, Store};
+use std::ops::Deref;
 
 pub trait CpuStore {
     type DataStorage<'a, T: 'a>: AsRef<[T]>;
 }
-
-
 
 impl<T: Store> CpuStore for T
 where

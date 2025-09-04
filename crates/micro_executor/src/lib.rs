@@ -1,8 +1,10 @@
+#![allow(warnings)]
+
 pub mod bf16_wrapper;
+pub mod f16_wrapper;
 pub mod load;
 pub mod model;
 pub mod nn;
-pub mod f16_wrapper;
 
 #[test]
 fn load_safetensors() {

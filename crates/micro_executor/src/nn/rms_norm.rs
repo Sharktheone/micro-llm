@@ -1,10 +1,10 @@
-use std::fmt::{Debug, Display};
-use ndarray::{Array2, ArrayView1, ScalarOperand, Axis};
+use crate::load::{Loadable, load_array1};
+use micro_backend::load::LoadResult;
+use micro_backend::{Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, Tensor, Tensor2};
+use ndarray::{Array2, ArrayView1, Axis, ScalarOperand};
 use num_traits::{AsPrimitive, Float, FromPrimitive, Zero};
 use rayon::slice::{ParallelSlice, ParallelSliceMut};
-use micro_backend::{Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, Tensor, Tensor2};
-use micro_backend::load::LoadResult;
-use crate::load::{load_array1, Loadable};
+use std::fmt::{Debug, Display};
 
 pub struct RmsNorm<'a, T> {
     pub weight: ArrayView1<'a, T>,
@@ -40,7 +40,8 @@ impl<'a, T: AsPrimitive<f32>> RmsNorm<'a, T> {
 
         let mut output = vec![T::zero(); x_view.len()];
 
-        x_view.chunks(cols)
+        x_view
+            .chunks(cols)
             .zip(output.chunks_mut(cols))
             .for_each(|(src, dst)| {
                 let sum2 = src
@@ -64,7 +65,11 @@ impl<'a, T: AsPrimitive<f32>> RmsNorm<'a, T> {
 }
 
 impl<'a, T: Loadable> RmsNorm<'a, T> {
-    pub fn from_safe_tensors(model: &safetensors::SafeTensors<'a>, prefix: &str, eps: f32) -> anyhow::Result<Self> {
+    pub fn from_safe_tensors(
+        model: &safetensors::SafeTensors<'a>,
+        prefix: &str,
+        eps: f32,
+    ) -> anyhow::Result<Self> {
         let weight = load_array1(model, &format!("{}weight", prefix))?;
 
         Ok(RmsNorm { weight, eps })
@@ -76,7 +81,7 @@ pub struct RmsNorm2<'a, B: Backend, T: DType> {
     pub eps: f32,
 }
 
-impl<'a,  B: Backend, T: DType> RmsNorm2<'a, B, T> {
+impl<'a, B: Backend, T: DType> RmsNorm2<'a, B, T> {
     pub fn load(loader: &B::Loader, prefix: &str, eps: f32) -> LoadResult<Self> {
         let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
@@ -85,7 +90,7 @@ impl<'a,  B: Backend, T: DType> RmsNorm2<'a, B, T> {
 
     pub fn forward(&self, x: &RefTensor2<'_, B, T>) -> anyhow::Result<Tensor2<'_, B, T>> {
         let [rows, cols] = x.dim().pattern();
-        
+
         if rows == 0 || cols == 0 {
             anyhow::bail!("RmsNorm: input has zero-sized dimension: ({rows}, {cols})");
         }
@@ -102,7 +107,8 @@ impl<'a,  B: Backend, T: DType> RmsNorm2<'a, B, T> {
 
         let mut output = vec![T::zero(); x_view.len()];
 
-        x_view.par_chunks(cols)
+        x_view
+            .par_chunks(cols)
             .zip(output.par_chunks_mut(cols))
             .for_each(|(src, dst)| {
                 let sum2 = src

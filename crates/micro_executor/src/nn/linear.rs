@@ -1,8 +1,10 @@
 use crate::load::{LoadResult, Loadable, load_array1, load_array2};
 use crate::nn::Layer;
+use micro_backend::{
+    Backend, DType, LoadTensor2, ModelLoader, RefTensor2, SupportsDType, Tensor, Tensor2, load,
+};
 use ndarray::{Array2, ArrayView1, ArrayView2, LinalgScalar};
 use safetensors::SafeTensors;
-use micro_backend::{load, Backend, DType, LoadTensor2, ModelLoader, RefTensor2, SupportsDType, Tensor, Tensor2};
 
 pub struct Linear<'a, T> {
     weight: ArrayView2<'a, T>,
@@ -57,7 +59,6 @@ impl<T: LinalgScalar> LinearNoBias<'_, T> {
     }
 }
 
-
 pub struct LinearB<'a, B: Backend + SupportsDType<T>, T: DType> {
     weight: LoadTensor2<'a, B, T>,
     bias: LoadTensor2<'a, B, T>,
@@ -65,11 +66,9 @@ pub struct LinearB<'a, B: Backend + SupportsDType<T>, T: DType> {
 
 impl<'a, B: Backend + SupportsDType<T>, T: DType> LinearB<'a, B, T> {
     pub fn load(loader: &B::Loader, prefix: &str) -> load::LoadResult<Self> {
-        let weight = loader
-            .load_tensor(&format!("{prefix}weight"))?;
-        
-        let bias = loader
-            .load_tensor(&format!("{prefix}bias"))?;
+        let weight = loader.load_tensor(&format!("{prefix}weight"))?;
+
+        let bias = loader.load_tensor(&format!("{prefix}bias"))?;
 
         Ok(LinearB { weight, bias })
     }
@@ -89,8 +88,7 @@ pub struct LinearNoBiasB<'a, B: Backend + SupportsDType<T>, T: DType> {
 
 impl<'a, B: Backend + SupportsDType<T>, T: DType> LinearNoBiasB<'a, B, T> {
     pub fn load(loader: &B::Loader, prefix: &str) -> load::LoadResult<Self> {
-        let weight = loader
-            .load_tensor(&format!("{prefix}weight"))?;
+        let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
         Ok(LinearNoBiasB { weight })
     }

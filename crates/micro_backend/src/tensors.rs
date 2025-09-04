@@ -1,6 +1,6 @@
-use crate::{Backend, DType};
 use crate::dim::{Dim1, Dim2, Dim3};
 use crate::store::{LoadStore, OwnedStore, RefStore, SharedStore};
+use crate::{Backend, DType};
 
 pub type Tensor1<'a, B: Backend, T: DType> = B::Tensor<'a, T, OwnedStore, Dim1>;
 pub type Tensor2<'a, B: Backend, T: DType> = B::Tensor<'a, T, OwnedStore, Dim2>;

@@ -98,7 +98,6 @@ impl From<(usize, usize, usize)> for Dim3 {
     }
 }
 
-
 impl private::Sealed for Dim1 {}
 impl private::Sealed for Dim2 {}
 impl private::Sealed for Dim3 {}

@@ -11,7 +11,7 @@ pub enum LoadError {
     #[error("Invalid dimensions, got {0:?}, expected {1:?}")]
     Dim(u8, u8),
     #[error("{0}")]
-    Other(anyhow::Error)
+    Other(anyhow::Error),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,6 +38,5 @@ pub enum ShapeError {
     Unsupported,
     Overflow,
 }
-
 
 pub type LoadResult<T> = Result<T, LoadError>;
