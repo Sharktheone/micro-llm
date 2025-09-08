@@ -2,7 +2,7 @@ use micro_backend::{Backend, DType, RefTensor1, RefTensor2, RefTensor3, Supports
 use num_traits::Float;
 
 
-pub fn softmax1<B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor1<B, T>) -> RefTensor1<B, T> {
+pub fn softmax1<'a, B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor1<B, T>) -> Tensor1<'a, B, T> {
     let max = input.data().iter().cloned().fold(T::min_value(), T::max);
 
     let mut exp = input.sub_scalar(max);
@@ -28,7 +28,7 @@ pub fn softmax1_inplace<B: Backend  + SupportsDType<T>, T: DType>(input: &mut Te
     input.div_scalar_inplace(sum);
 }
 
-fn softmax2<B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor2<B, T>, axis: usize) -> Tensor2<B, T> {
+fn softmax2<'a, B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor2<B, T>, axis: usize) -> Tensor2<'a, B, T> {
     let max = input.map_axis_threaded(axis, |col| {
         col.data().iter().cloned().fold(T::min_value(), T::max)
     });
@@ -55,7 +55,7 @@ fn softmax2_inplace<B: Backend + SupportsDType<T>, T: DType>(input: &mut Tensor2
     let sum = sum.insert_axis(axis);
     input.div_inplace(&sum);
 }
-fn softmax3<B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor3<B, T>, axis: usize) -> Tensor3<B, T> {
+fn softmax3<'a, B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor3<B, T>, axis: usize) -> Tensor3<'a, B, T> {
     let max = input.map_axis_threaded(axis, |col| {
         col.data().iter().cloned().fold(T::min_value(), T::max)
     });
