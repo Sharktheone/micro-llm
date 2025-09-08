@@ -1,14 +1,14 @@
 #![feature(specialization)]
 #![allow(warnings)]
 
+mod loader;
 mod store;
 mod tensor;
-mod loader;
 
+use crate::loader::CpuLoader;
 use crate::tensor::CpuTensor;
 use half::f16;
 use micro_backend::{Backend, DType, Dim, Store, SupportsDType, Tensor};
-use crate::loader::CpuLoader;
 
 pub struct CpuBackend;
 

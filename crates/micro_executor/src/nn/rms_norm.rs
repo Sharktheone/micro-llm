@@ -1,5 +1,7 @@
 use micro_backend::load::LoadResult;
-use micro_backend::{Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, SupportsDType, Tensor, Tensor2};
+use micro_backend::{
+    Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, SupportsDType, Tensor, Tensor2,
+};
 use num_traits::{AsPrimitive, Float, FromPrimitive, Zero};
 use rayon::slice::{ParallelSlice, ParallelSliceMut};
 use std::fmt::{Debug, Display};

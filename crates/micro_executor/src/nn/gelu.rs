@@ -1,7 +1,6 @@
 use micro_backend::{Backend, DType, RefTensor2, SupportsDType, Tensor, Tensor2};
 use num_traits::{FloatConst, FromPrimitive};
 
-
 pub fn gelu2<B: Backend + SupportsDType<T>, T: DType>(x: RefTensor2<B, T>) -> Tensor2<B, T> {
     x.map_threaded(|x| {
         let x = x.to_f32().unwrap();

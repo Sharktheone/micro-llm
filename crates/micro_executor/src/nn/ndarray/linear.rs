@@ -55,4 +55,3 @@ impl<T: LinalgScalar> LinearNoBias<'_, T> {
         input.dot(&self.weight.t())
     }
 }
-

@@ -72,4 +72,3 @@ impl<'a, T: Loadable> RmsNorm<'a, T> {
         Ok(RmsNorm { weight, eps })
     }
 }
-

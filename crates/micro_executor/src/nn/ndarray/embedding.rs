@@ -26,4 +26,3 @@ impl<'a, T> Embedding<'a, T> {
         self.weight.slice(s![..input, ..])
     }
 }
-

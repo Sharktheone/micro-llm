@@ -38,4 +38,3 @@ pub fn softmax1<T: LinalgScalar + Float + ScalarOperand>(
     let sum = exp.sum();
     Ok(exp / sum)
 }
-

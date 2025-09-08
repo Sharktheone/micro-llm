@@ -10,4 +10,3 @@ pub fn silu<T: Float + FromPrimitive + One>(mut x: ndarray::Array2<T>) -> ndarra
 
     x
 }
-

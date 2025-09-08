@@ -1,5 +1,6 @@
-use micro_backend::{Backend, LoadTensor2, ModelLoader, DType, RefTensor2, Tensor, Tensor2, load, SupportsDType};
-
+use micro_backend::{
+    Backend, DType, LoadTensor2, ModelLoader, RefTensor2, SupportsDType, Tensor, Tensor2, load,
+};
 
 pub struct Embedding<'a, B: Backend + SupportsDType<T>, T: DType> {
     weight: LoadTensor2<'a, B, T>,
