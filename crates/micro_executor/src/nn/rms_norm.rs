@@ -1,15 +1,15 @@
 use micro_backend::load::LoadResult;
-use micro_backend::{Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, Tensor, Tensor2};
+use micro_backend::{Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, SupportsDType, Tensor, Tensor2};
 use num_traits::{AsPrimitive, Float, FromPrimitive, Zero};
 use rayon::slice::{ParallelSlice, ParallelSliceMut};
 use std::fmt::{Debug, Display};
 
-pub struct RmsNorm<'a, B: Backend, T: DType> {
+pub struct RmsNorm<'a, B: Backend + SupportsDType<T>, T: DType> {
     pub weight: LoadTensor1<'a, B, T>,
     pub eps: f32,
 }
 
-impl<'a, B: Backend, T: DType> RmsNorm<'a, B, T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> RmsNorm<'a, B, T> {
     pub fn load(loader: &'a B::Loader, prefix: &str, eps: f32) -> LoadResult<Self> {
         let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
@@ -55,6 +55,6 @@ impl<'a, B: Backend, T: DType> RmsNorm<'a, B, T> {
                 }
             });
 
-        Ok(Tensor2::<B, T>::from_vec((rows, cols), output)?)
+        Ok(Tensor2::<B, T>::from_vec((rows, cols), output))
     }
 }
