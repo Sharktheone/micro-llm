@@ -64,7 +64,7 @@ pub struct LinearB<'a, B: Backend + SupportsDType<T>, T: DType> {
 }
 
 impl<'a, B: Backend + SupportsDType<T>, T: DType> LinearB<'a, B, T> {
-    pub fn load(loader: &B::Loader, prefix: &str) -> load::LoadResult<Self> {
+    pub fn load(loader: &'a B::Loader, prefix: &str) -> load::LoadResult<Self> {
         let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
         let bias = loader.load_tensor(&format!("{prefix}bias"))?;
@@ -86,7 +86,7 @@ pub struct LinearNoBiasB<'a, B: Backend + SupportsDType<T>, T: DType> {
 }
 
 impl<'a, B: Backend + SupportsDType<T>, T: DType> LinearNoBiasB<'a, B, T> {
-    pub fn load(loader: &B::Loader, prefix: &str) -> load::LoadResult<Self> {
+    pub fn load(loader: &'a B::Loader, prefix: &str) -> load::LoadResult<Self> {
         let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
         Ok(LinearNoBiasB { weight })

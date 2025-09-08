@@ -10,7 +10,7 @@ pub struct RmsNorm<'a, B: Backend, T: DType> {
 }
 
 impl<'a, B: Backend, T: DType> RmsNorm<'a, B, T> {
-    pub fn load(loader: &B::Loader, prefix: &str, eps: f32) -> LoadResult<Self> {
+    pub fn load(loader: &'a B::Loader, prefix: &str, eps: f32) -> LoadResult<Self> {
         let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
         Ok(RmsNorm { weight, eps })

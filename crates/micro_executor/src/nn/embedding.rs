@@ -6,7 +6,7 @@ pub struct Embedding<'a, B: Backend, T: DType> {
 }
 
 impl<'a, B: Backend, T: DType> Embedding<'a, B, T> {
-    pub fn load(loader: &B::Loader, prefix: &str) -> load::LoadResult<Self> {
+    pub fn load(loader: &'a B::Loader, prefix: &str) -> load::LoadResult<Self> {
         let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
         Ok(Embedding { weight })
