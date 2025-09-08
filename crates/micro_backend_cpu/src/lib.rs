@@ -3,10 +3,12 @@
 
 mod store;
 mod tensor;
+mod loader;
 
 use crate::tensor::CpuTensor;
 use half::f16;
 use micro_backend::{Backend, DType, Dim, Store, SupportsDType, Tensor};
+use crate::loader::CpuLoader;
 
 pub struct CpuBackend;
 
@@ -19,4 +21,6 @@ impl Backend for CpuBackend {
         = <Self as SupportsDType<T>>::_Tensor<'a, S, D>
     where
         Self: SupportsDType<T>;
+
+    type Loader = CpuLoader;
 }
