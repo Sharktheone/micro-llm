@@ -1,11 +1,11 @@
-use micro_backend::{Backend, LoadTensor2, ModelLoader, DType, RefTensor2, Tensor, Tensor2, load};
+use micro_backend::{Backend, LoadTensor2, ModelLoader, DType, RefTensor2, Tensor, Tensor2, load, SupportsDType};
 
 
-pub struct Embedding<'a, B: Backend, T: DType> {
+pub struct Embedding<'a, B: Backend + SupportsDType<T>, T: DType> {
     weight: LoadTensor2<'a, B, T>,
 }
 
-impl<'a, B: Backend, T: DType> Embedding<'a, B, T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> Embedding<'a, B, T> {
     pub fn load(loader: &'a B::Loader, prefix: &str) -> load::LoadResult<Self> {
         let weight = loader.load_tensor(&format!("{prefix}weight"))?;
 
