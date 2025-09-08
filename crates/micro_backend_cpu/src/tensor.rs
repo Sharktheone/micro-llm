@@ -163,19 +163,19 @@ impl<'a, T: DType, S: Store + CpuStore, D: Dim> Tensor<'a, T, CpuBackend, S, D>
         todo!()
     }
 
-    fn div_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
+    fn div_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'_, T, OwnedStore, D> {
         todo!()
     }
 
-    fn mul_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
+    fn mul_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'_, T, OwnedStore, D> {
         todo!()
     }
 
-    fn add_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
+    fn add_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'_, T, OwnedStore, D> {
         todo!()
     }
 
-    fn sub_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'a, T, OwnedStore, D> {
+    fn sub_scalar(&self, scalar: T) -> <CpuBackend as Backend>::Tensor<'_, T, OwnedStore, D> {
         todo!()
     }
 

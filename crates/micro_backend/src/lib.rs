@@ -106,10 +106,10 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     where
         Self: OwnedTensor<B, T, D>;
 
-    fn div_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
-    fn mul_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
-    fn add_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
-    fn sub_scalar(&self, scalar: T) -> B::Tensor<'a, T, OwnedStore, D>;
+    fn div_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
+    fn mul_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
+    fn add_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
+    fn sub_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
 
     fn div_scalar_inplace(&mut self, scalar: T)
     where
