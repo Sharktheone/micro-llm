@@ -1,5 +1,5 @@
 use crate::load::Loadable;
-use crate::nn::{Embedding, LinearNoBias, RmsNorm, multinomial, silu, softmax1, softmax3};
+use crate::nn::{Embedding, LinearNoBias, RmsNorm, softmax1};
 use ndarray::{
     Array1, Array2, Array3, ArrayView3, Axis, LinalgScalar, ScalarOperand, concatenate, s,
 };
