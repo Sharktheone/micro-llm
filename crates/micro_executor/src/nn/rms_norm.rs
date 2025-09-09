@@ -1,3 +1,5 @@
+use rayon::iter::ParallelIterator;
+use rayon::iter::IndexedParallelIterator;
 use micro_backend::load::LoadResult;
 use micro_backend::{
     Backend, DType, Dim, LoadTensor1, ModelLoader, RefTensor2, SupportsDType, Tensor, Tensor2,
@@ -57,6 +59,6 @@ impl<'a, B: Backend + SupportsDType<T>, T: DType> RmsNorm<'a, B, T> {
                 }
             });
 
-        Ok(Tensor2::<B, T>::from_vec((rows, cols), output))
+        Ok(Tensor2::<B, T>::from_vec(output, (rows, cols)))
     }
 }
