@@ -62,7 +62,7 @@ impl<B: Backend + SupportsDType<T>, T: DType, D: Dim> OwnedTensor<B, T, D>
 }
 
 pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
-    Sized + Debug + Clone
+    Sized + Debug + Clone + Send + Sync
 {
     fn shape(&self) -> &[usize];
     fn dim(&self) -> D;
