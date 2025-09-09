@@ -8,7 +8,7 @@ use std::fmt::{Debug, Display};
 pub use tensors::*;
 
 use half::f16;
-use num_traits::{Float, FromPrimitive, One, Zero};
+use num_traits::{AsPrimitive, Float, FromPrimitive, One, Zero};
 use std::ops::{Add, Mul};
 use std::path::Path;
 
@@ -30,7 +30,7 @@ pub trait SupportsDType<T: DType>: Backend {
 }
 
 pub trait DType:
-    'static + Display + Debug + Copy + Float + FromPrimitive + Zero + One + Send + Sync
+    'static + Display + Debug + Copy + Float + FromPrimitive + Zero + One + Send + Sync + AsPrimitive<f32>
 {
 }
 
@@ -93,23 +93,23 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
         other: &B::Tensor<'_, T, S2, D>,
     ) -> B::Tensor<'b, T, OwnedStore, D>;
 
-    fn add_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>)
+    fn add_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
         Self: OwnedTensor<B, T, D>;
-    fn sub_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>)
+    fn sub_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
         Self: OwnedTensor<B, T, D>;
-    fn mul_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>)
+    fn mul_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
         Self: OwnedTensor<B, T, D>;
-    fn div_inplace<S2: Store>(&mut self, other: &B::Tensor<'_, T, S2, D>)
+    fn div_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
         Self: OwnedTensor<B, T, D>;
 
-    fn div_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
-    fn mul_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
-    fn add_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
-    fn sub_scalar(&self, scalar: T) -> B::Tensor<'_, T, OwnedStore, D>;
+    fn div_scalar<'b>(&self, scalar: T) -> B::Tensor<'b, T, OwnedStore, D>;
+    fn mul_scalar<'b>(&self, scalar: T) -> B::Tensor<'b, T, OwnedStore, D>;
+    fn add_scalar<'b>(&self, scalar: T) -> B::Tensor<'b, T, OwnedStore, D>;
+    fn sub_scalar<'b>(&self, scalar: T) -> B::Tensor<'b, T, OwnedStore, D>;
 
     fn div_scalar_inplace(&mut self, scalar: T)
     where
