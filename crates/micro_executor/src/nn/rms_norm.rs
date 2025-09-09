@@ -24,10 +24,10 @@ impl<'a, B: Backend + SupportsDType<T>, T: DType> RmsNorm<'a, B, T> {
         if rows == 0 || cols == 0 {
             anyhow::bail!("RmsNorm: input has zero-sized dimension: ({rows}, {cols})");
         }
-        if self.weight.len() != cols {
+        if self.weight.data().len() != cols {
             anyhow::bail!(
                 "RmsNorm: weight length {} does not match input cols {}",
-                self.weight.len(),
+                self.weight.data().len(),
                 cols
             );
         }
