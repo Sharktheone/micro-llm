@@ -1,4 +1,4 @@
-pub trait Dim: private::Sealed {
+pub trait Dim: private::Sealed + Send + Sync {
     type Pattern;
 
     fn pattern(&self) -> Self::Pattern;
