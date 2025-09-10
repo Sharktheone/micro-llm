@@ -1,21 +1,22 @@
+use micro_backend::{RefTensor2, RefTensor3, Tensor};
 use crate::load::Loadable;
 use crate::nn::{Embedding, LinearNoBias, RmsNorm, softmax1};
-use ndarray::{
-    Array1, Array2, Array3, ArrayView3, Axis, LinalgScalar, ScalarOperand, concatenate, s,
-};
 use ndarray_rand::rand_distr::uniform::SampleUniform;
 use num_traits::{AsPrimitive, Float, FloatConst, FromPrimitive, One, Zero};
 use std::f32::consts::PI;
 use std::fmt::{Debug, Display};
 use std::slice;
+use micro_backend::{Backend, DType, SupportsDType, Tensor1, Tensor2, Tensor3};
+use crate::nn::ndarray::multinomial::multinomial;
+use crate::nn::ndarray::silu::silu;
 
-pub struct LlamaCache<T> {
-    cos: Array2<T>,
-    sin: Array2<T>,
-    kvs: Vec<Option<(Array3<T>, Array3<T>)>>,
+pub struct LlamaCache<'a, B: Backend + SupportsDType<T>, T: DType> {
+    cos: Tensor2<'a, B, T>,
+    sin: Tensor2<'a, B, T>,
+    kvs: Vec<Option<(Tensor3<'a, B, T>, Tensor3<'a, B, T>)>>,
 }
 
-impl<T: Copy + Float + FromPrimitive + 'static> LlamaCache<T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaCache<'a, B, T> {
     pub fn new(config: &LlamaConfig) -> Self {
         let kvs = vec![None; config.num_blocks];
 
@@ -46,9 +47,11 @@ impl<T: Copy + Float + FromPrimitive + 'static> LlamaCache<T> {
             .map(|freq| T::from_f32(freq).unwrap())
             .collect::<Vec<_>>();
 
-        let theta = Array1::from_vec(theta);
+        let len = theta.len();
 
-        let mut idx_theta = Array1::from_iter(0..config.max_pos_emb)
+        let theta = Tensor1::from_vec(theta, len);
+
+        let mut idx_theta = Tensor1::from_iter(0..config.max_pos_emb)
             .mapv(|i| T::from_usize(i).unwrap())
             .into_shape_with_order((config.max_pos_emb, 1))
             .unwrap();
@@ -97,31 +100,21 @@ pub struct RopeScaling {
     original_max_pos_emb: usize,
 }
 
-pub struct LlamaModel<'a, T> {
-    embedding: Embedding<'a, T>,
-    blocks: Vec<LlamaBlock<'a, T>>,
-    ln_f: RmsNorm<'a, T>,
-    lm_head: LinearNoBias<'a, T>,
+pub struct LlamaModel<'a, B: Backend + SupportsDType<T>, T: DType> {
+    embedding: Embedding<'a, B, T>,
+    blocks: Vec<LlamaBlock<'a, B, T>>,
+    ln_f: RmsNorm<'a, B, T>,
+    lm_head: LinearNoBias<'a, B, T>,
 }
 
-impl<
-    T: LinalgScalar
-        + Clone
-        + Float
-        + Zero
-        + FromPrimitive
-        + ScalarOperand
-        + Debug
-        + Display
-        + AsPrimitive<f32>,
-> LlamaModel<'_, T>
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'a, B, T>
 {
     pub fn forward(
         &self,
         x: &[usize],
         index_pos: usize,
-        cache: &mut LlamaCache<T>,
-    ) -> anyhow::Result<Array1<T>> {
+        cache: &mut LlamaCache<B, T>,
+    ) -> anyhow::Result<Tensor1<B, T>> {
         let seq_len = x.len();
 
         let mut x = self.embedding.forward(x);
@@ -131,17 +124,17 @@ impl<
         }
 
         let x = self.ln_f.forward(&x)?;
-        let x = x.index_axis(Axis(0), seq_len - 1);
+        let x = x.index_axis(0, seq_len - 1);
         let x = x.to_owned();
-        let x = x.insert_axis(Axis(0));
+        let x = x.insert_axis(0);
 
         let x = self.lm_head.forward(&x);
 
-        Ok(x.index_axis(Axis(0), 0).to_owned())
+        Ok(x.index_axis(0, 0).to_owned())
     }
 }
 
-impl<'a, T: Loadable> LlamaModel<'a, T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'a, B, T> {
     pub fn from_safe_tensors(
         model: &safetensors::SafeTensors<'a>,
         prefix: &str,
@@ -174,26 +167,13 @@ impl<'a, T: Loadable> LlamaModel<'a, T> {
     }
 }
 
-impl<
-    T: LinalgScalar
-        + Clone
-        + Float
-        + Zero
-        + FromPrimitive
-        + ScalarOperand
-        + Default
-        + SampleUniform
-        + Debug
-        + Display
-        + AsPrimitive<f32>
-        + for<'a> std::ops::AddAssign<&'a T>,
-> LlamaModel<'_, T>
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'_, B, T>
 {
     pub fn next_token(
         &self,
         x: &[usize],
         is_first: bool,
-        cache: &mut LlamaCache<T>,
+        cache: &mut LlamaCache<'_, B, T>,
     ) -> anyhow::Result<usize> {
         let (ctx, index_pos) = if is_first {
             (x, 0)
@@ -213,31 +193,20 @@ impl<
     }
 }
 
-pub struct LlamaBlock<'a, T> {
-    attn: LlamaAttention<'a, T>,
-    mlp: LlamaMlp<'a, T>,
-    ln_1: RmsNorm<'a, T>,
-    ln_2: RmsNorm<'a, T>,
+pub struct LlamaBlock<'a, B: Backend + SupportsDType<T>, T: DType> {
+    attn: LlamaAttention<'a, B, T>,
+    mlp: LlamaMlp<'a, B, T>,
+    ln_1: RmsNorm<'a, B, T>,
+    ln_2: RmsNorm<'a, B, T>,
 }
 
-impl<
-    T: LinalgScalar
-        + Clone
-        + Float
-        + Zero
-        + FromPrimitive
-        + ScalarOperand
-        + Display
-        + Debug
-        + AsPrimitive<f32>,
-> LlamaBlock<'_, T>
-{
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaBlock<'a, B, T> {
     pub fn forward(
         &self,
-        x: &Array2<T>,
+        x: &RefTensor2<T>,
         index_pos: usize,
         block_idx: usize,
-        cache: &mut LlamaCache<T>,
+        cache: &mut LlamaCache<'a, B, T>,
     ) -> anyhow::Result<Array2<T>> {
         let residual = x;
 
@@ -255,7 +224,7 @@ impl<
     }
 }
 
-impl<'a, T: Loadable> LlamaBlock<'a, T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaBlock<'a, B, T> {
     pub fn from_safe_tensors(
         model: &safetensors::SafeTensors<'a>,
         prefix: &str,
@@ -281,11 +250,11 @@ impl<'a, T: Loadable> LlamaBlock<'a, T> {
     }
 }
 
-pub struct LlamaAttention<'a, T> {
-    q_proj: LinearNoBias<'a, T>,
-    k_proj: LinearNoBias<'a, T>,
-    v_proj: LinearNoBias<'a, T>,
-    o_proj: LinearNoBias<'a, T>,
+pub struct LlamaAttention<'a, B: Backend + SupportsDType<T>, T: DType> {
+    q_proj: LinearNoBias<'a, B, T>,
+    k_proj: LinearNoBias<'a, B, T>,
+    v_proj: LinearNoBias<'a, B, T>,
+    o_proj: LinearNoBias<'a, B, T>,
     num_heads: usize,
     num_kv_heads: usize,
     head_dim: usize,
@@ -462,13 +431,13 @@ impl<'a, T: Loadable> LlamaAttention<'a, T> {
     }
 }
 
-pub struct LlamaMlp<'a, T> {
-    c_fc1: LinearNoBias<'a, T>,
-    c_fc2: LinearNoBias<'a, T>,
-    c_proj: LinearNoBias<'a, T>,
+pub struct LlamaMlp<'a, B: Backend + SupportsDType<T>, T: DType> {
+    c_fc1: LinearNoBias<'a, B, T>,
+    c_fc2: LinearNoBias<'a, B, T>,
+    c_proj: LinearNoBias<'a, B, T>,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive> LlamaMlp<'_, T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaMlp<'a, B, T> {
     fn forward(&self, input: &ndarray::Array2<T>) -> ndarray::Array2<T> {
         let residual = self.c_fc1.forward(input);
         let residual = silu(residual);
@@ -483,7 +452,7 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive> LlamaMlp<'_, T> {
     }
 }
 
-impl<'a, T: Loadable> LlamaMlp<'a, T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaMlp<'a, B, T> {
     pub fn from_safe_tensors(
         model: &safetensors::SafeTensors<'a>,
         prefix: &str,
@@ -500,7 +469,7 @@ impl<'a, T: Loadable> LlamaMlp<'a, T> {
     }
 }
 
-fn tril<T: LinalgScalar + Float + ScalarOperand>(input: ArrayView3<T>) -> ndarray::Array3<T> {
+fn tril<'a, B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor3<B, T>) -> Tensor3<'a, B, T> {
     let mut output = ndarray::Array3::<T>::zeros(input.raw_dim());
 
     for ((i, j), (_, o)) in input.indexed_iter().zip(output.indexed_iter_mut()) {
