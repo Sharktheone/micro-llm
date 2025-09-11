@@ -1,6 +1,7 @@
 use crate::load::Loadable;
 use crate::nn::ndarray::multinomial::multinomial;
 use crate::nn::ndarray::silu::silu;
+use crate::nn::ndarray::softmax::softmax3;
 use crate::nn::{Embedding, LinearNoBias, RmsNorm, softmax1};
 use micro_backend::{Backend, DType, SupportsDType, Tensor1, Tensor2, Tensor3};
 use micro_backend::{RefTensor2, RefTensor3, Tensor};
@@ -9,7 +10,6 @@ use num_traits::{AsPrimitive, Float, FloatConst, FromPrimitive, One, Zero};
 use std::f32::consts::PI;
 use std::fmt::{Debug, Display};
 use std::slice;
-use crate::nn::ndarray::softmax::softmax3;
 
 pub struct LlamaCache<'a, B: Backend + SupportsDType<T>, T: DType> {
     cos: Tensor2<'a, B, T>,
@@ -345,7 +345,11 @@ impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaAttention<'_, B, T> {
     //     output
     // }
 
-    pub fn apply_rotary_emb(x: &RefTensor3<B, T>, index_pos: usize, cache: &LlamaCache<B, T>) -> Tensor3<'_, B, T> {
+    pub fn apply_rotary_emb(
+        x: &RefTensor3<B, T>,
+        index_pos: usize,
+        cache: &LlamaCache<B, T>,
+    ) -> Tensor3<'_, B, T> {
         let (n_head, seq_len, hidden_size) = x.dim();
         let half = hidden_size / 2;
 
