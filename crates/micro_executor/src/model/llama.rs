@@ -9,6 +9,7 @@ use num_traits::{AsPrimitive, Float, FloatConst, FromPrimitive, One, Zero};
 use std::f32::consts::PI;
 use std::fmt::{Debug, Display};
 use std::slice;
+use crate::nn::ndarray::softmax::softmax3;
 
 pub struct LlamaCache<'a, B: Backend + SupportsDType<T>, T: DType> {
     cos: Tensor2<'a, B, T>,
@@ -201,11 +202,11 @@ pub struct LlamaBlock<'a, B: Backend + SupportsDType<T>, T: DType> {
 impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaBlock<'a, B, T> {
     pub fn forward(
         &self,
-        x: &RefTensor2<T>,
+        x: &RefTensor2<B, T>,
         index_pos: usize,
         block_idx: usize,
         cache: &mut LlamaCache<'a, B, T>,
-    ) -> anyhow::Result<Array2<T>> {
+    ) -> anyhow::Result<Tensor2<B, T>> {
         let residual = x;
 
         let x = self.ln_1.forward(x)?;
@@ -259,16 +260,14 @@ pub struct LlamaAttention<'a, B: Backend + SupportsDType<T>, T: DType> {
     max_pos_emb: usize,
 }
 
-impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Display>
-    LlamaAttention<'_, T>
-{
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaAttention<'_, B, T> {
     pub fn forward(
         &self,
-        x: &Array2<T>,
+        x: &RefTensor2<B, T>,
         index_pos: usize,
         block_idx: usize,
         cache: &mut LlamaCache<T>,
-    ) -> anyhow::Result<Array2<T>> {
+    ) -> anyhow::Result<Tensor2<B, T>> {
         let (seq_len, hidden_size) = x.dim();
 
         let q = self.q_proj.forward(x);
@@ -330,23 +329,23 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
 
         Ok(y)
     }
-    fn casual_dot(q: ArrayView3<T>, k: ArrayView3<T>) -> ndarray::Array3<T> {
-        let mut output = Array3::<T>::zeros((q.shape()[0], q.shape()[1], k.shape()[2]));
+    // fn casual_dot(q: ArrayView3<T>, k: ArrayView3<T>) -> ndarray::Array3<T> {
+    //     let mut output = Array3::<T>::zeros((q.shape()[0], q.shape()[1], k.shape()[2]));
+    //
+    //     for ((q, k), mut o) in q
+    //         .axis_iter(Axis(0))
+    //         .zip(k.axis_iter(Axis(0)))
+    //         .zip(output.axis_iter_mut(Axis(0)))
+    //     {
+    //         let x = q.dot(&k);
+    //
+    //         o.assign(&x);
+    //     }
+    //
+    //     output
+    // }
 
-        for ((q, k), mut o) in q
-            .axis_iter(Axis(0))
-            .zip(k.axis_iter(Axis(0)))
-            .zip(output.axis_iter_mut(Axis(0)))
-        {
-            let x = q.dot(&k);
-
-            o.assign(&x);
-        }
-
-        output
-    }
-
-    pub fn apply_rotary_emb(x: &Array3<T>, index_pos: usize, cache: &LlamaCache<T>) -> Array3<T> {
+    pub fn apply_rotary_emb(x: &RefTensor3<B, T>, index_pos: usize, cache: &LlamaCache<B, T>) -> Tensor3<'_, B, T> {
         let (n_head, seq_len, hidden_size) = x.dim();
         let half = hidden_size / 2;
 
@@ -385,10 +384,10 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
                 }
             });
 
-        Array3::from_shape_vec((n_head, seq_len, hidden_size), output).unwrap()
+        Tensor3::from_shape_vec((n_head, seq_len, hidden_size), output).unwrap()
     }
 
-    pub fn repeat_kv(&self, x: Array3<T>) -> anyhow::Result<Array3<T>> {
+    pub fn repeat_kv(&self, x: Tensor3<B, T>) -> anyhow::Result<Tensor3<B, T>> {
         let n_rep = self.num_heads / self.num_kv_heads;
 
         Ok(if n_rep == 1 {
@@ -403,7 +402,7 @@ impl<T: LinalgScalar + Clone + Float + Zero + FromPrimitive + ScalarOperand + Di
     }
 }
 
-impl<'a, T: Loadable> LlamaAttention<'a, T> {
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaAttention<'a, B, T> {
     pub fn from_safe_tensors(
         model: &safetensors::SafeTensors<'a>,
         prefix: &str,
