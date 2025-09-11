@@ -1,14 +1,14 @@
-use micro_backend::{RefTensor2, RefTensor3, Tensor};
 use crate::load::Loadable;
+use crate::nn::ndarray::multinomial::multinomial;
+use crate::nn::ndarray::silu::silu;
 use crate::nn::{Embedding, LinearNoBias, RmsNorm, softmax1};
+use micro_backend::{Backend, DType, SupportsDType, Tensor1, Tensor2, Tensor3};
+use micro_backend::{RefTensor2, RefTensor3, Tensor};
 use ndarray_rand::rand_distr::uniform::SampleUniform;
 use num_traits::{AsPrimitive, Float, FloatConst, FromPrimitive, One, Zero};
 use std::f32::consts::PI;
 use std::fmt::{Debug, Display};
 use std::slice;
-use micro_backend::{Backend, DType, SupportsDType, Tensor1, Tensor2, Tensor3};
-use crate::nn::ndarray::multinomial::multinomial;
-use crate::nn::ndarray::silu::silu;
 
 pub struct LlamaCache<'a, B: Backend + SupportsDType<T>, T: DType> {
     cos: Tensor2<'a, B, T>,
@@ -107,8 +107,7 @@ pub struct LlamaModel<'a, B: Backend + SupportsDType<T>, T: DType> {
     lm_head: LinearNoBias<'a, B, T>,
 }
 
-impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'a, B, T>
-{
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'a, B, T> {
     pub fn forward(
         &self,
         x: &[usize],
@@ -167,8 +166,7 @@ impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'a, B, T> {
     }
 }
 
-impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'_, B, T>
-{
+impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaModel<'_, B, T> {
     pub fn next_token(
         &self,
         x: &[usize],
@@ -469,7 +467,9 @@ impl<'a, B: Backend + SupportsDType<T>, T: DType> LlamaMlp<'a, B, T> {
     }
 }
 
-fn tril<'a, B: Backend + SupportsDType<T>, T: DType>(input: &RefTensor3<B, T>) -> Tensor3<'a, B, T> {
+fn tril<'a, B: Backend + SupportsDType<T>, T: DType>(
+    input: &RefTensor3<B, T>,
+) -> Tensor3<'a, B, T> {
     let mut output = ndarray::Array3::<T>::zeros(input.raw_dim());
 
     for ((i, j), (_, o)) in input.indexed_iter().zip(output.indexed_iter_mut()) {

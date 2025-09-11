@@ -30,7 +30,17 @@ pub trait SupportsDType<T: DType>: Backend {
 }
 
 pub trait DType:
-    'static + Display + Debug + Copy + Float + FromPrimitive + Zero + One + Send + Sync + AsPrimitive<f32>
+    'static
+    + Display
+    + Debug
+    + Copy
+    + Float
+    + FromPrimitive
+    + Zero
+    + One
+    + Send
+    + Sync
+    + AsPrimitive<f32>
 {
 }
 
