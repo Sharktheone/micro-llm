@@ -164,6 +164,9 @@ dependencies = [
 [[package]]
 name = "micro-llm"
 version = "0.1.0"
+dependencies = [
+ "micro_tokenizer",
+]
 
 [[package]]
 name = "micro_backend"
