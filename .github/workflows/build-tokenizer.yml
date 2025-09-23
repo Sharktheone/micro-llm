@@ -1,0 +1,43 @@
+name: Build tokenizer example
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build tokenizer and upload artifact
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Cache cargo registry and target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build tokenizer example (release)
+        run: cargo build --release --example tokenizer
+
+      - name: Upload tokenizer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tokenizer
+          path: |
+            target/release/examples/tokenizer
+            target/release/tokenizer
+            target/release/examples/tokenizer*
