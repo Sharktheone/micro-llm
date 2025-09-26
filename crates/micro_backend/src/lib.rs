@@ -71,6 +71,13 @@ impl<B: Backend + SupportsDType<T>, T: DType, D: Dim> OwnedTensor<B, T, D>
 {
 }
 
+pub trait VecTensor<B: Backend, T: DType, S: Store> {}
+
+
+impl<B: Backend + SupportsDType<T>, T: DType, S: Store> VecTensor<B, T, S>
+for B::Tensor<'_, T, S, Dim1>
+{}
+
 pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     Sized + Debug + Clone + Send + Sync
 {
@@ -176,6 +183,14 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     fn from_slice(data: &'a [T], shape: impl Into<D>) -> B::Tensor<'a, T, RefStore, D>;
 
     fn from_vec(data: Vec<T>, shape: impl Into<D>) -> B::Tensor<'a, T, OwnedStore, D>;
+
+    fn from_elems(data: Vec<T>) -> B::Tensor<'a, T, OwnedStore, Dim1>
+    where
+        Self: VecTensor<B, T, OwnedStore>;
+
+    fn from_elems_ref(data: &'a [T]) -> B::Tensor<'a, T, RefStore, Dim1>
+    where
+        Self: VecTensor<B, T, RefStore>;
 
     fn squeeze(&self, axis: usize) -> B::Tensor<'a, T, RefStore, D::Smaller>;
     fn unsqueeze(&self, axis: usize) -> B::Tensor<'a, T, RefStore, D::Larger>;
