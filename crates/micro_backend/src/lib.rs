@@ -192,6 +192,10 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     where
         Self: VecTensor<B, T, RefStore>;
 
+    fn from_iter<I: IntoIterator<Item = T>>(data: I) -> B::Tensor<'a, T, OwnedStore, Dim1>
+    where
+        Self: VecTensor<B, T, OwnedStore>;
+
     fn squeeze(&self, axis: usize) -> B::Tensor<'a, T, RefStore, D::Smaller>;
     fn unsqueeze(&self, axis: usize) -> B::Tensor<'a, T, RefStore, D::Larger>;
 
