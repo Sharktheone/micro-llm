@@ -10,9 +10,15 @@ members = [
 ]
 
 [dependencies]
+micro_tokenizer = { path = "crates/micro_tokenizer", features = ["hf"] }
 
 
 [profile.release]
 lto = "fat"
 opt-level = 3
 codegen-units = 1
+
+
+[[example]]
+name = "tokenizer"
+path = "examples/tokenizer.rs"
