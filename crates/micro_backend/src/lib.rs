@@ -64,20 +64,6 @@ pub trait ModelLoader<B: Backend>: Sized {
         B: SupportsDType<T>;
 }
 
-pub trait OwnedTensor<B: Backend, T: DType, D: Dim> {}
-
-impl<B: Backend + SupportsDType<T>, T: DType, D: Dim> OwnedTensor<B, T, D>
-    for B::Tensor<'_, T, OwnedStore, D>
-{
-}
-
-pub trait VecTensor<B: Backend, T: DType, S: Store> {}
-
-
-impl<B: Backend + SupportsDType<T>, T: DType, S: Store> VecTensor<B, T, S>
-for B::Tensor<'_, T, S, Dim1>
-{}
-
 pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     Sized + Debug + Clone + Send + Sync
 {
@@ -112,16 +98,16 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
 
     fn add_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
     fn sub_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
     fn mul_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
     fn div_inplace<'b, S2: Store>(&mut self, other: &B::Tensor<'b, T, S2, D>)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
 
     fn div_scalar<'b>(&self, scalar: T) -> B::Tensor<'b, T, OwnedStore, D>;
     fn mul_scalar<'b>(&self, scalar: T) -> B::Tensor<'b, T, OwnedStore, D>;
@@ -130,26 +116,26 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
 
     fn div_scalar_inplace(&mut self, scalar: T)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
     fn mul_scalar_inplace(&mut self, scalar: T)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
     fn add_scalar_inplace(&mut self, scalar: T)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
     fn sub_scalar_inplace(&mut self, scalar: T)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
 
     fn map(&self, f: impl Fn(T) -> T) -> B::Tensor<'a, T, OwnedStore, D>;
     fn map_inplace(&mut self, f: impl Fn(T) -> T)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
 
     fn map_threaded(&self, f: impl Fn(T) -> T + Send + Sync) -> B::Tensor<'a, T, OwnedStore, D>;
     fn map_inplace_threaded(&mut self, f: impl Fn(T) -> T + Send + Sync)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
 
     fn map_batched(
         &self,
@@ -158,7 +144,7 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
     ) -> B::Tensor<'a, T, OwnedStore, D>;
     fn map_inplace_batched(&mut self, f: impl Fn(&mut [T]) + Send + Sync, batch_size: usize)
     where
-        Self: OwnedTensor<B, T, D>;
+        Self: Tensor<'a, T, B, OwnedStore, D>;
 
     fn map_axis(
         &self,
@@ -186,15 +172,15 @@ pub trait Tensor<'a, T: DType, B: Backend + SupportsDType<T>, S: Store, D: Dim>:
 
     fn from_elems(data: Vec<T>) -> B::Tensor<'a, T, OwnedStore, Dim1>
     where
-        Self: VecTensor<B, T, OwnedStore>;
+        Self: Tensor<'a, T, B, OwnedStore, Dim1>;
 
     fn from_elems_ref(data: &'a [T]) -> B::Tensor<'a, T, RefStore, Dim1>
     where
-        Self: VecTensor<B, T, RefStore>;
+        Self: Tensor<'a, T, B, RefStore, Dim1>;
 
     fn from_iter<I: IntoIterator<Item = T>>(data: I) -> B::Tensor<'a, T, OwnedStore, Dim1>
     where
-        Self: VecTensor<B, T, OwnedStore>;
+        Self: Tensor<'a, T, B, OwnedStore, Dim1>;
 
     fn squeeze(&self, axis: usize) -> B::Tensor<'a, T, RefStore, D::Smaller>;
     fn unsqueeze(&self, axis: usize) -> B::Tensor<'a, T, RefStore, D::Larger>;
