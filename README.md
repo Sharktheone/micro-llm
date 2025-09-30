@@ -14,7 +14,7 @@ Project status: early prototype / scaffolding. APIs are unstable.
 
 Since micro-llm is still under heavy construction, the main thing that you can try it the tokenizer. It actually works in a completely different way than most other tokenizers.
 
-1. Download the prebuild tokenizer from [here](https://github.com/Sharktheone/micro-llm/actions/runs/18133890162/artifacts/4144557374)
+1. Download the prebuild tokenizer from [here](https://github.com/Sharktheone/micro-llm/actions/runs/18133890162/artifacts/4144557374) or build it yourself with `cargo build --release --example tokenizer`
 2. Get a tokenizer.json file from a Hugging Face model (e.g [gpt-2](https://huggingface.co/openai-community/gpt2/raw/main/tokenizer.json))
 3. Run the tokenizer binary:
 
