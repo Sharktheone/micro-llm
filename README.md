@@ -9,6 +9,21 @@ Minimal, highly modular local LLM experimentation workspace written in Rust. The
 
 Project status: early prototype / scaffolding. APIs are unstable.
 
+
+## Try it out
+
+Since micro-llm is still under heavy construction, the main thing that you can try it the tokenizer. It actually works in a completely different way than most other tokenizers.
+
+1. Download the prebuild tokenizer from [here](https://github.com/Sharktheone/micro-llm/actions/runs/18133890162/artifacts/4144557374)
+2. Get a tokenizer.json file from a Hugging Face model (e.g [gpt-2](https://huggingface.co/openai-community/gpt2/raw/main/tokenizer.json))
+3. Run the tokenizer binary:
+
+```bash
+./path/to/tokenizer path/to/tokenizer.json "Your text to tokenize"
+#or with a file
+./path/to/tokenizer path/to/tokenizer.json --file README.md
+```
+
 ## Design Highlights
 
 1. Trait‑Driven Backend Abstraction
